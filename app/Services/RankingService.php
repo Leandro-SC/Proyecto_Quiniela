@@ -15,209 +15,345 @@ class RankingService
         $this->pdo = Database::getConnection();
     }
 
-    /**
-     * Recalcula los puntos y premios de una jornada (Round).
-     */
     public function recomputeRound(int $roundId): array
     {
-       // 1. Obtener partidos
         $matches = $this->getMatchesByRound($roundId);
-        
-        if (empty($matches)) {
+
+        if ($matches === []) {
             return $this->emptySummary($roundId);
         }
 
-        // Mapear resultados oficiales
         $resultsByMatch = [];
-        foreach ($matches as $m) {
-            // --- NUEVO: Ignorar partidos cancelados o postergados ---
-            if (in_array($m['status'], ['CANCELLED', 'POSTPONED'])) {
-                continue; 
-            }
-            // -------------------------------------------------------
 
-            $outcome = $m['result_outcome'] ?? null;
-            if ($outcome === null || $outcome === '') {
+        foreach ($matches as $match) {
+            $status = strtoupper((string)($match['status'] ?? ''));
+
+            if (in_array($status, ['CANCELLED', 'POSTPONED'], true)) {
                 continue;
             }
-            $resultsByMatch[(int)$m['id']] = $outcome;
+
+            $outcome = (string)($match['result_outcome'] ?? '');
+
+            if ($outcome === '') {
+                continue;
+            }
+
+            $resultsByMatch[(int)$match['id']] = $outcome;
         }
 
-        // 2. Obtener tickets pagados
         $tickets = $this->getPaidTicketsByRound($roundId);
-        
-        if (empty($tickets)) {
+
+        if ($tickets === []) {
             return $this->emptySummary($roundId);
         }
 
-        $maxPoints      = 0;
-        $pointsById     = [];
+        $maxPoints = 0;
+        $pointsByTicketId = [];
         $totalCollected = 0.0;
 
-        foreach ($tickets as $t) {
-            $ticketId  = (int)$t['id'];
-            $itemsJson = (string)$t['items'];
-            $items     = json_decode($itemsJson, true);
-            
-            // Sumar al total recaudado
-            $totalCollected += (float)$t['total_amount'];
+        foreach ($tickets as $ticket) {
+            $ticketId = (int)$ticket['id'];
+            $totalCollected += (float)$ticket['total_amount'];
 
-            if (!is_array($items)) {
-                $pointsById[$ticketId] = 0;
-                $this->updateTicketPoints($ticketId, 0);
-                continue;
-            }
+            $items = $this->getTicketItems($ticketId);
 
             $points = 0;
-            foreach ($items as $item) {
-                if (!is_array($item)) continue;
-                
-                $matchId = (int)($item['match_id'] ?? 0);
-                $pick    = (string)($item['pick'] ?? '');
 
-                if (isset($resultsByMatch[$matchId]) && $pick !== '') {
-                    $outcome = $resultsByMatch[$matchId];
-                    if ($pick === $outcome) {
-                        $points += 1; 
-                    }
+            foreach ($items as $item) {
+                $matchId = (int)$item['match_id'];
+                $selection = (string)$item['selection'];
+
+                if (isset($resultsByMatch[$matchId]) && $selection === $resultsByMatch[$matchId]) {
+                    $points++;
                 }
             }
 
-            $pointsById[$ticketId] = $points;
-            if ($points > $maxPoints) {
-                $maxPoints = $points;
-            }
+            $pointsByTicketId[$ticketId] = $points;
+            $maxPoints = max($maxPoints, $points);
 
             $this->updateTicketPoints($ticketId, $points);
         }
 
-        // 3. Determinar ganadores
-        $firstWinners  = [];
+        $firstWinners = [];
         $secondWinners = [];
-        $secondPoints  = 0;
+        $secondPoints = 0;
 
         if ($maxPoints > 0) {
-            // Primer lugar (Empatados con maxPoints)
-            foreach ($pointsById as $tid => $pts) {
-                if ($pts === $maxPoints) {
-                    $firstWinners[] = $tid;
+            foreach ($pointsByTicketId as $ticketId => $points) {
+                if ($points === $maxPoints) {
+                    $firstWinners[] = $ticketId;
                 }
             }
-            
-            // Buscar cuál es el puntaje del segundo lugar
-            foreach ($pointsById as $pts) {
-                if ($pts < $maxPoints && $pts > $secondPoints) {
-                    $secondPoints = $pts;
+
+            foreach ($pointsByTicketId as $points) {
+                if ($points < $maxPoints && $points > $secondPoints) {
+                    $secondPoints = $points;
                 }
             }
-            
-            // Segundo lugar (Empatados con secondPoints)
+
             if ($secondPoints > 0) {
-                foreach ($pointsById as $tid => $pts) {
-                    if ($pts === $secondPoints) {
-                        $secondWinners[] = $tid;
+                foreach ($pointsByTicketId as $ticketId => $points) {
+                    if ($points === $secondPoints) {
+                        $secondWinners[] = $ticketId;
                     }
                 }
             }
         }
 
-        // --- AQUÍ EL CAMBIO IMPORTANTE ---
-        // 4. Calcular premios dinámicamente según la DB
-        
-        // Obtenemos la configuración de porcentajes de ESTA jornada específica
         $roundConfig = $this->getRoundConfig($roundId);
-        
-        // Convertimos porcentaje (ej. 45) a decimal (0.45)
-        // Usamos valores por defecto (45, 30, 15) solo si la base de datos falla
-        $poolPct   = (float)($roundConfig['prize_pool_percent'] ?? 45.0) / 100.0;
-        $firstPct  = (float)($roundConfig['first_place_percent'] ?? 30.0) / 100.0;
-        $secondPct = (float)($roundConfig['second_place_percent'] ?? 15.0) / 100.0;
 
-        $totalPrizePool    = $totalCollected * $poolPct;
-        $firstPrizeTotal   = $totalCollected * $firstPct;
-        $secondPrizeTotal  = $totalCollected * $secondPct;
+        $firstPct = (float)($roundConfig['first_place_percent'] ?? 30.00) / 100.0;
+        $secondPct = (float)($roundConfig['second_place_percent'] ?? 15.00) / 100.0;
 
-        // División entre ganadores
-        $firstPrizeEach  = (!empty($firstWinners))  ? $firstPrizeTotal / count($firstWinners) : 0.0;
-        $secondPrizeEach = (!empty($secondWinners)) ? $secondPrizeTotal / count($secondWinners) : 0.0;
+        $firstPrizeTotal = $totalCollected * $firstPct;
+        $secondPrizeTotal = $totalCollected * $secondPct;
+
+        $firstPrizeEach = $firstWinners !== [] ? $firstPrizeTotal / count($firstWinners) : 0.0;
+        $secondPrizeEach = $secondWinners !== [] ? $secondPrizeTotal / count($secondWinners) : 0.0;
+
+        $this->refreshRoundTicketScores(
+            $roundId,
+            $tickets,
+            $pointsByTicketId,
+            $firstWinners,
+            $secondWinners,
+            $firstPrizeEach,
+            $secondPrizeEach
+        );
 
         return [
-            'matchday_id'        => $roundId,
-            'total_collected'    => $totalCollected,
-            'first_prize_total'  => $firstPrizeTotal,
+            'matchday_id' => $roundId,
+            'round_id' => $roundId,
+            'total_collected' => $totalCollected,
+            'first_prize_total' => $firstPrizeTotal,
             'second_prize_total' => $secondPrizeTotal,
-            'first_prize_each'   => $firstPrizeEach,
-            'second_prize_each'  => $secondPrizeEach,
-            'first_winners'      => $firstWinners,
-            'second_winners'     => $secondWinners,
+            'first_prize_each' => $firstPrizeEach,
+            'second_prize_each' => $secondPrizeEach,
+            'first_winners' => $firstWinners,
+            'second_winners' => $secondWinners,
         ];
     }
 
-    // --- AGREGAR ESTE MÉTODO PRIVADO ---
     private function getRoundConfig(int $roundId): array
     {
-        $stmt = $this->pdo->prepare("SELECT prize_pool_percent, first_place_percent, second_place_percent FROM rounds WHERE id = :id");
-        $stmt->execute([':id' => $roundId]);
-        $res = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $res ?: [];
+        $stmt = $this->pdo->prepare('
+            SELECT
+                total_pool_percent AS prize_pool_percent,
+                first_place_percent,
+                second_place_percent
+            FROM round_prize_config
+            WHERE round_id = :round_id
+            LIMIT 1
+        ');
+
+        $stmt->execute([':round_id' => $roundId]);
+
+        $config = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $config ?: [];
     }
 
     private function getMatchesByRound(int $roundId): array
     {
-        $stmt = $this->pdo->prepare("SELECT id, result_outcome FROM matches WHERE round_id = :rid");
-        $stmt->execute([':rid' => $roundId]);
+        $stmt = $this->pdo->prepare('
+            SELECT
+                id,
+                status,
+                result_outcome
+            FROM matches
+            WHERE round_id = :round_id
+        ');
+
+        $stmt->execute([':round_id' => $roundId]);
+
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     private function getPaidTicketsByRound(int $roundId): array
     {
-        $stmt = $this->pdo->prepare("SELECT id, items, total_amount FROM tickets WHERE matchday_id = :rid AND status = 'PAID'");
-        $stmt->execute([':rid' => $roundId]);
+        $stmt = $this->pdo->prepare('
+            SELECT
+                id,
+                ticket_code,
+                user_name,
+                phone,
+                total_amount,
+                points,
+                created_at
+            FROM tickets
+            WHERE round_id = :round_id
+              AND status = "PAID"
+            ORDER BY created_at ASC, id ASC
+        ');
+
+        $stmt->execute([':round_id' => $roundId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    private function getTicketItems(int $ticketId): array
+    {
+        $stmt = $this->pdo->prepare('
+            SELECT
+                match_id,
+                selection
+            FROM ticket_items
+            WHERE ticket_id = :ticket_id
+        ');
+
+        $stmt->execute([':ticket_id' => $ticketId]);
+
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     private function updateTicketPoints(int $ticketId, int $points): void
     {
-        $stmt = $this->pdo->prepare("UPDATE tickets SET points = :pts, updated_at = NOW() WHERE id = :id");
-        $stmt->execute([':pts' => $points, ':id' => $ticketId]);
+        $stmt = $this->pdo->prepare('
+            UPDATE tickets
+            SET points = :points,
+                updated_at = NOW()
+            WHERE id = :id
+        ');
+
+        $stmt->execute([
+            ':points' => $points,
+            ':id' => $ticketId,
+        ]);
+    }
+
+    private function refreshRoundTicketScores(
+        int $roundId,
+        array $tickets,
+        array $pointsByTicketId,
+        array $firstWinners,
+        array $secondWinners,
+        float $firstPrizeEach,
+        float $secondPrizeEach
+    ): void {
+        $delete = $this->pdo->prepare('
+            DELETE FROM round_ticket_scores
+            WHERE round_id = :round_id
+        ');
+
+        $delete->execute([':round_id' => $roundId]);
+
+        $insert = $this->pdo->prepare('
+            INSERT INTO round_ticket_scores (
+                round_id,
+                ticket_id,
+                phone,
+                user_name,
+                score,
+                position,
+                is_winner,
+                prize_amount,
+                created_at,
+                updated_at
+            )
+            VALUES (
+                :round_id,
+                :ticket_id,
+                :phone,
+                :user_name,
+                :score,
+                :position,
+                :is_winner,
+                :prize_amount,
+                NOW(),
+                NOW()
+            )
+        ');
+
+        $rankedTickets = $tickets;
+
+        usort($rankedTickets, function (array $a, array $b) use ($pointsByTicketId): int {
+            $pointsA = $pointsByTicketId[(int)$a['id']] ?? 0;
+            $pointsB = $pointsByTicketId[(int)$b['id']] ?? 0;
+
+            if ($pointsA === $pointsB) {
+                return strcmp((string)$a['created_at'], (string)$b['created_at']);
+            }
+
+            return $pointsB <=> $pointsA;
+        });
+
+        $position = 1;
+
+        foreach ($rankedTickets as $ticket) {
+            $ticketId = (int)$ticket['id'];
+            $score = (int)($pointsByTicketId[$ticketId] ?? 0);
+
+            $isFirst = in_array($ticketId, $firstWinners, true);
+            $isSecond = in_array($ticketId, $secondWinners, true);
+
+            $insert->execute([
+                ':round_id' => $roundId,
+                ':ticket_id' => $ticketId,
+                ':phone' => $ticket['phone'],
+                ':user_name' => $ticket['user_name'],
+                ':score' => $score,
+                ':position' => $position,
+                ':is_winner' => ($isFirst || $isSecond) ? 1 : 0,
+                ':prize_amount' => $isFirst ? $firstPrizeEach : ($isSecond ? $secondPrizeEach : 0),
+            ]);
+
+            $position++;
+        }
     }
 
     private function emptySummary(int $id): array
     {
         return [
-            'matchday_id' => $id, 'total_collected' => 0.0, 'first_prize_total'=> 0.0, 'second_prize_total'=> 0.0, 'first_winners' => [], 'second_winners' => []
+            'matchday_id' => $id,
+            'round_id' => $id,
+            'total_collected' => 0.0,
+            'first_prize_total' => 0.0,
+            'second_prize_total' => 0.0,
+            'first_prize_each' => 0.0,
+            'second_prize_each' => 0.0,
+            'first_winners' => [],
+            'second_winners' => [],
         ];
     }
 
-    // --- Métodos Públicos para Controladores ---
-
     public function getRoundRanking(int $roundId, string $status = 'PAID', ?string $search = null): array
     {
-        $where = ['t.matchday_id = :rid'];
-        $params = [':rid' => $roundId];
+        $where = ['t.round_id = :round_id'];
+        $params = [':round_id' => $roundId];
 
         if ($status !== 'ALL') {
-            $where[] = 't.status = :st';
-            $params[':st'] = $status;
-        }
-        if ($search) {
-            $where[] = '(t.ticket_code LIKE :q OR t.user_name LIKE :q)';
-            $params[':q'] = "%$search%";
+            $where[] = 't.status = :status';
+            $params[':status'] = $status;
         }
 
-        $sql = 'SELECT t.*, r.name as round_name, COALESCE(l.name, "Sin Liga") as league_name
-                FROM tickets t
-                LEFT JOIN rounds r ON r.id = t.matchday_id
-                LEFT JOIN leagues l ON l.id = t.league_id
-                WHERE ' . implode(' AND ', $where) . '
-                ORDER BY t.points DESC, t.created_at ASC';
+        if ($search) {
+            $where[] = '(t.ticket_code LIKE :search OR t.user_name LIKE :search OR t.phone LIKE :search)';
+            $params[':search'] = '%' . $search . '%';
+        }
+
+        $sql = '
+            SELECT
+                t.*,
+                r.name AS round_name,
+                COALESCE(l.name, "Sin Liga") AS league_name
+            FROM tickets t
+            INNER JOIN rounds r ON r.id = t.round_id
+            INNER JOIN leagues l ON l.id = r.league_id
+            WHERE ' . implode(' AND ', $where) . '
+            ORDER BY t.points DESC, t.created_at ASC
+        ';
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
+
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        
+
         $rank = 1;
-        foreach($rows as &$r) { $r['rank'] = $rank++; }
+
+        foreach ($rows as &$row) {
+            $row['rank'] = $rank++;
+        }
+
         return $rows;
     }
 
@@ -230,36 +366,55 @@ class RankingService
     {
         $summary = $this->recomputeRound($roundId);
         $ids = $place === 1 ? $summary['first_winners'] : $summary['second_winners'];
-        if (empty($ids)) return [];
+
+        if ($ids === []) {
+            return [];
+        }
+
         $in = implode(',', array_map('intval', $ids));
-        return $this->pdo->query("SELECT * FROM tickets WHERE id IN ($in)")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        return $this->pdo
+            ->query("SELECT * FROM tickets WHERE id IN ($in)")
+            ->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     public function onTicketStatusChanged(int $ticketId): void
     {
-        $stmt = $this->pdo->prepare('SELECT matchday_id FROM tickets WHERE id = :id');
+        $stmt = $this->pdo->prepare('
+            SELECT round_id
+            FROM tickets
+            WHERE id = :id
+            LIMIT 1
+        ');
+
         $stmt->execute([':id' => $ticketId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if($row) $this->recomputeRound((int)$row['matchday_id']);
-    }
-    
-    public function getRoundSummaryCached(int $roundId): array
-{
-    $cacheFile = __DIR__ . '/../../storage/cache/ranking_' . $roundId . '.json';
-    
-    // Si el archivo existe y es reciente (menos de 60 segundos)
-    if (file_exists($cacheFile) && (time() - filemtime($cacheFile) < 60)) {
-        return json_decode(file_get_contents($cacheFile), true);
+
+        if ($row) {
+            $this->recomputeRound((int)$row['round_id']);
+        }
     }
 
-    // Si no, calculamos y guardamos
-    $data = $this->recomputeRound($roundId);
-    
-    // Asegurarse que la carpeta exista
-    if (!is_dir(dirname($cacheFile))) mkdir(dirname($cacheFile), 0777, true);
-    
-    file_put_contents($cacheFile, json_encode($data));
-    
-    return $data;
-}
+    public function getRoundSummaryCached(int $roundId): array
+    {
+        $cacheFile = __DIR__ . '/../../storage/cache/ranking_' . $roundId . '.json';
+
+        if (is_file($cacheFile) && (time() - filemtime($cacheFile) < 60)) {
+            $data = json_decode((string)file_get_contents($cacheFile), true);
+
+            if (is_array($data)) {
+                return $data;
+            }
+        }
+
+        $data = $this->recomputeRound($roundId);
+
+        if (!is_dir(dirname($cacheFile))) {
+            mkdir(dirname($cacheFile), 0777, true);
+        }
+
+        file_put_contents($cacheFile, json_encode($data, JSON_UNESCAPED_UNICODE));
+
+        return $data;
+    }
 }
