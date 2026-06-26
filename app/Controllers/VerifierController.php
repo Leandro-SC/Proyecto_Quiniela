@@ -6,55 +6,40 @@ namespace App\Controllers;
 use App\Core\Request;
 use App\Core\Response;
 use App\Models\TicketModel;
-use App\Models\MatchModel;
-use App\Services\RankingService;
+use Throwable;
 
 class VerifierController extends BaseController
 {
     public function index(Request $request, Response $response): void
     {
-        $code = isset($_GET['ticket_code']) ? trim((string)$_GET['ticket_code']) : '';
+        $ticketCode = trim((string)($_GET['code'] ?? $_GET['ticket_code'] ?? ''));
         $ticket = null;
-        $matches = [];
-        $rank = null;
+        $items = [];
         $error = null;
 
-        if ($code !== '') {
-            $ticketModel = new TicketModel();
-            $ticket = $ticketModel->findByCode($code);
+        if ($ticketCode !== '') {
+            try {
+                $ticketModel = new TicketModel();
+                $data = $ticketModel->getVerifierDataByCode($ticketCode);
 
-            if ($ticket) {
-                $roundId = (int)$ticket['matchday_id'];
-                
-                // 1. Obtener Partidos
-                $matchModel = new MatchModel();
-                if (method_exists($matchModel, 'getByRound')) {
-                    $matches = $matchModel->getByRound($roundId);
+                if (!$data) {
+                    $error = 'No se encontró ningún ticket con ese código.';
+                } else {
+                    $ticket = $data['ticket'];
+                    $items = $data['items'];
                 }
-
-                // 2. Calcular Posición en el Ranking
-                $rankingService = new RankingService();
-                $ranking = $rankingService->getRoundRanking($roundId);
-                
-                // Buscar el ticket en el ranking
-                foreach ($ranking as $r) {
-                    if ((int)$r['id'] === (int)$ticket['id']) {
-                        $rank = $r['rank']; // 'rank' lo genera el servicio getRoundRanking
-                        break;
-                    }
-                }
-            } else {
-                $error = 'No encontramos ningún ticket con el código: ' . htmlspecialchars($code);
+            } catch (Throwable $e) {
+                error_log('Error VerifierController@index: ' . $e->getMessage());
+                $error = 'No se pudo verificar el ticket en este momento.';
             }
         }
 
         $this->render('verifier/index', [
-            'pageTitle'  => 'Verificador de Quiniela',
-            'ticket'     => $ticket,
-            'matches'    => $matches,
-            'rank'       => $rank,
-            'searchCode' => $code,
-            'error'      => $error
+            'pageTitle' => 'Verificador de tickets',
+            'ticketCode' => $ticketCode,
+            'ticket' => $ticket,
+            'items' => $items,
+            'error' => $error,
         ]);
     }
 }

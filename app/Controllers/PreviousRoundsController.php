@@ -101,7 +101,7 @@ class PreviousRoundsController extends BaseController
                     items,
                     points
              FROM tickets
-             WHERE matchday_id = :round_id
+             WHERE round_id = :round_id
                AND status = "PAID"
              ORDER BY points DESC, id ASC'
         );

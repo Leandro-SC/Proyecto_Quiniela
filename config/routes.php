@@ -23,9 +23,9 @@ return [
             'controller' => 'QuinielaController',
             'action'     => 'previous',
         ],
-        '/api/quiniela/current' => [
-            'controller' => 'Api\\QuinielaController',
-            'action'     => 'current',
+        '/quinielas-anteriores' => [
+            'controller' => 'QuinielaController',
+            'action'     => 'previous',
         ],
         '/ranking' => [
             'controller' => 'QuinielaController',
@@ -38,6 +38,14 @@ return [
         '/verificador' => [
             'controller' => 'VerifierController',
             'action'     => 'index',
+        ],
+
+        // ============================
+        // API · PÚBLICA
+        // ============================
+        '/api/quiniela/current' => [
+            'controller' => 'Api\\QuinielaController',
+            'action'     => 'current',
         ],
 
         // ============================
@@ -81,7 +89,7 @@ return [
         ],
 
         // ============================
-        // ADMIN · JORNADAS (ROUNDS)
+        // ADMIN · JORNADAS / ROUNDS
         // ============================
         '/admin/rounds' => [
             'controller' => 'Admin\\RoundAdminController',
@@ -97,7 +105,7 @@ return [
         ],
 
         // ============================
-        // ADMIN · PARTIDOS (MATCHES)
+        // ADMIN · PARTIDOS
         // ============================
         '/admin/rounds/matches' => [
             'controller' => 'Admin\\RoundMatchesAdminController',
@@ -112,8 +120,14 @@ return [
             'action'     => 'edit',
         ],
 
+        // Alias por compatibilidad con código anterior
+        '/admin/matches/manage' => [
+            'controller' => 'Admin\\MatchAdminController',
+            'action'     => 'manage',
+        ],
+
         // ============================
-        // ADMIN · TICKETS
+        // ADMIN · TICKETS / PAGOS
         // ============================
         '/admin/tickets' => [
             'controller' => 'Admin\\TicketAdminController',
@@ -129,6 +143,14 @@ return [
         // ============================
         '/admin/ranking' => [
             'controller' => 'Admin\\RankingAdminController',
+            'action'     => 'index',
+        ],
+
+        // ============================
+        // ADMIN · HISTORIAL
+        // ============================
+        '/admin/history' => [
+            'controller' => 'Admin\\RoundHistoryController',
             'action'     => 'index',
         ],
 
@@ -159,14 +181,13 @@ return [
             'controller' => 'Admin\\CountryAdminController',
             'action'     => 'create',
         ],
-        // CORREGIDO: Se quitó el /{id}
         '/admin/countries/edit' => [
             'controller' => 'Admin\\CountryAdminController',
             'action'     => 'edit',
         ],
 
         // ============================
-        // ADMIN · CLUBES
+        // ADMIN · CLUBES / EQUIPOS
         // ============================
         '/admin/clubs' => [
             'controller' => 'Admin\\ClubAdminController',
@@ -176,7 +197,6 @@ return [
             'controller' => 'Admin\\ClubAdminController',
             'action'     => 'create',
         ],
-        // CORREGIDO: Se quitó el /{id}
         '/admin/clubs/edit' => [
             'controller' => 'Admin\\ClubAdminController',
             'action'     => 'edit',
@@ -187,16 +207,35 @@ return [
         ],
 
         // ============================
-        // ADMIN · HISTORIAL
+        // ADMIN · CONFIGURACIÓN
         // ============================
-        '/admin/history' => [
-            'controller' => 'Admin\\RoundHistoryController',
+        '/admin/settings' => [
+            'controller' => 'Admin\\SettingsAdminController',
             'action'     => 'index',
         ],
-        
+
+        // ============================
+        // ADMIN · REGLAMENTO
+        // ============================
         '/admin/regulations' => [
             'controller' => 'Admin\\RegulationAdminController',
             'action'     => 'index',
+        ],
+
+        // ============================
+        // ADMIN · TESTIMONIOS
+        // ============================
+        '/admin/testimonials' => [
+            'controller' => 'Admin\\TestimonialAdminController',
+            'action'     => 'index',
+        ],
+        '/admin/testimonials/create' => [
+            'controller' => 'Admin\\TestimonialAdminController',
+            'action'     => 'create',
+        ],
+        '/admin/testimonials/edit' => [
+            'controller' => 'Admin\\TestimonialAdminController',
+            'action'     => 'edit',
         ],
     ],
 
@@ -233,8 +272,18 @@ return [
             'action'     => 'delete',
         ],
 
+        // Aliases por compatibilidad con formularios viejos
+        '/admin/leagues/create' => [
+            'controller' => 'Admin\\LeagueAdminController',
+            'action'     => 'store',
+        ],
+        '/admin/leagues/edit' => [
+            'controller' => 'Admin\\LeagueAdminController',
+            'action'     => 'update',
+        ],
+
         // ============================
-        // ADMIN · JORNADAS
+        // ADMIN · JORNADAS / ROUNDS
         // ============================
         '/admin/rounds/store' => [
             'controller' => 'Admin\\RoundAdminController',
@@ -249,6 +298,16 @@ return [
             'action'     => 'delete',
         ],
 
+        // Aliases por compatibilidad
+        '/admin/rounds/create' => [
+            'controller' => 'Admin\\RoundAdminController',
+            'action'     => 'store',
+        ],
+        '/admin/rounds/edit' => [
+            'controller' => 'Admin\\RoundAdminController',
+            'action'     => 'update',
+        ],
+
         // ============================
         // ADMIN · PARTIDOS
         // ============================
@@ -260,23 +319,27 @@ return [
             'controller' => 'Admin\\RoundMatchesAdminController',
             'action'     => 'edit',
         ],
-        
-        '/admin/rounds/matches/create' => [
-        'controller' => 'Admin\\RoundMatchesAdminController', // Asegúrate que este nombre coincida con tu archivo real
-        'action'     => 'create',
-    ],
-    '/admin/rounds/matches/edit' => [
-        'controller' => 'Admin\\RoundMatchesAdminController',
-        'action'     => 'edit',
-    ],
-    // --- AGREGAR ESTO ---
-    '/admin/rounds/matches/delete' => [
-        'controller' => 'Admin\\RoundMatchesAdminController', // O MatchAdminController si usas ese
-        'action'     => 'delete',
-    ],
+        '/admin/rounds/matches/delete' => [
+            'controller' => 'Admin\\RoundMatchesAdminController',
+            'action'     => 'delete',
+        ],
+
+        // Alias por compatibilidad con MatchAdminController
+        '/admin/matches/store' => [
+            'controller' => 'Admin\\MatchAdminController',
+            'action'     => 'store',
+        ],
+        '/admin/matches/update' => [
+            'controller' => 'Admin\\MatchAdminController',
+            'action'     => 'update',
+        ],
+        '/admin/matches/delete' => [
+            'controller' => 'Admin\\MatchAdminController',
+            'action'     => 'delete',
+        ],
 
         // ============================
-        // ADMIN · TICKETS
+        // ADMIN · TICKETS / PAGOS
         // ============================
         '/admin/tickets/update-status' => [
             'controller' => 'Admin\\TicketAdminController',
@@ -290,7 +353,7 @@ return [
         // ============================
         // ADMIN · PROMOCIONES
         // ============================
-        '/admin/promotions/store' => [ 
+        '/admin/promotions/store' => [
             'controller' => 'Admin\\PromotionAdminController',
             'action'     => 'store',
         ],
@@ -302,42 +365,117 @@ return [
             'controller' => 'Admin\\PromotionAdminController',
             'action'     => 'delete',
         ],
-        
-        '/admin/regulations/update' => [
-            'controller' => 'Admin\\RegulationAdminController',
+
+        // Aliases por compatibilidad
+        '/admin/promotions/create' => [
+            'controller' => 'Admin\\PromotionAdminController',
+            'action'     => 'store',
+        ],
+        '/admin/promotions/edit' => [
+            'controller' => 'Admin\\PromotionAdminController',
             'action'     => 'update',
         ],
 
         // ============================
-        // ADMIN · PAÍSES (Faltaba Create y Edit)
+        // ADMIN · PAÍSES
         // ============================
-        '/admin/countries/create' => [
+        '/admin/countries/store' => [
             'controller' => 'Admin\\CountryAdminController',
-            'action'     => 'create',
+            'action'     => 'store',
         ],
-        '/admin/countries/edit' => [
+        '/admin/countries/update' => [
             'controller' => 'Admin\\CountryAdminController',
-            'action'     => 'edit',
+            'action'     => 'update',
         ],
         '/admin/countries/delete' => [
             'controller' => 'Admin\\CountryAdminController',
             'action'     => 'delete',
         ],
 
-        // ============================
-        // ADMIN · CLUBES (Faltaba Create y Edit)
-        // ============================
-        '/admin/clubs/create' => [
-            'controller' => 'Admin\\ClubAdminController',
-            'action'     => 'create',
+        // Aliases por compatibilidad
+        '/admin/countries/create' => [
+            'controller' => 'Admin\\CountryAdminController',
+            'action'     => 'store',
         ],
-        '/admin/clubs/edit' => [
+        '/admin/countries/edit' => [
+            'controller' => 'Admin\\CountryAdminController',
+            'action'     => 'update',
+        ],
+
+        // ============================
+        // ADMIN · CLUBES / EQUIPOS
+        // ============================
+        '/admin/clubs/store' => [
             'controller' => 'Admin\\ClubAdminController',
-            'action'     => 'edit',
+            'action'     => 'store',
+        ],
+        '/admin/clubs/update' => [
+            'controller' => 'Admin\\ClubAdminController',
+            'action'     => 'update',
         ],
         '/admin/clubs/delete' => [
             'controller' => 'Admin\\ClubAdminController',
             'action'     => 'delete',
+        ],
+
+        // Aliases por compatibilidad
+        '/admin/clubs/create' => [
+            'controller' => 'Admin\\ClubAdminController',
+            'action'     => 'store',
+        ],
+        '/admin/clubs/edit' => [
+            'controller' => 'Admin\\ClubAdminController',
+            'action'     => 'update',
+        ],
+
+        // ============================
+        // ADMIN · CONFIGURACIÓN
+        // ============================
+        '/admin/settings/update' => [
+            'controller' => 'Admin\\SettingsAdminController',
+            'action'     => 'update',
+        ],
+        '/admin/settings' => [
+            'controller' => 'Admin\\SettingsAdminController',
+            'action'     => 'update',
+        ],
+
+        // ============================
+        // ADMIN · REGLAMENTO
+        // ============================
+        '/admin/regulations/update' => [
+            'controller' => 'Admin\\RegulationAdminController',
+            'action'     => 'update',
+        ],
+        '/admin/regulations' => [
+            'controller' => 'Admin\\RegulationAdminController',
+            'action'     => 'update',
+        ],
+
+        // ============================
+        // ADMIN · TESTIMONIOS
+        // ============================
+        '/admin/testimonials/store' => [
+            'controller' => 'Admin\\TestimonialAdminController',
+            'action'     => 'store',
+        ],
+        '/admin/testimonials/update' => [
+            'controller' => 'Admin\\TestimonialAdminController',
+            'action'     => 'update',
+        ],
+        '/admin/testimonials/delete' => [
+            'controller' => 'Admin\\TestimonialAdminController',
+            'action'     => 'delete',
+        ],
+
+        // Aliases por compatibilidad
+        '/admin/testimonials/create' => [
+            'controller' => 'Admin\\TestimonialAdminController',
+            'action'     => 'store',
+        ],
+        '/admin/testimonials/edit' => [
+            'controller' => 'Admin\\TestimonialAdminController',
+            'action'     => 'update',
         ],
     ],
 ];

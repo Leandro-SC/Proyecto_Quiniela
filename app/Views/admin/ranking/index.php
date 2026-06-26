@@ -65,7 +65,7 @@ if (!empty($roundSummary)) {
         <div class="card-body row g-3 align-items-end">
             <div class="col-12 col-md-3">
                 <label for="f-jornada" class="form-label fw-bold">Jornada</label>
-                <select id="f-jornada" name="matchday_id" class="form-select" onchange="this.form.submit()">
+                <select id="f-jornada" name="round_id" class="form-select" onchange="this.form.submit()">
                     <option value="0">Todas</option>
                     <?php foreach (($matchdays ?? []) as $md): ?>
                         <?php

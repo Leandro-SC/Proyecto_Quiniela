@@ -122,7 +122,7 @@ class RankingService
         );
 
         return [
-            'matchday_id' => $roundId,
+            'round_id' => $roundId,
             'round_id' => $roundId,
             'total_collected' => $totalCollected,
             'first_prize_total' => $firstPrizeTotal,
@@ -304,7 +304,7 @@ class RankingService
     private function emptySummary(int $id): array
     {
         return [
-            'matchday_id' => $id,
+            'round_id' => $id,
             'round_id' => $id,
             'total_collected' => 0.0,
             'first_prize_total' => 0.0,

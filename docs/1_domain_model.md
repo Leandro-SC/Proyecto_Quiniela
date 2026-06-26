@@ -33,7 +33,7 @@ entity teams {
 entity matches {
   * id : BIGINT
   --
-  matchday_id : BIGINT
+  round_id : BIGINT
   home_team_id : BIGINT
   away_team_id : BIGINT
   status : ENUM
@@ -52,7 +52,7 @@ entity tickets {
   --
   ticket_code : VARCHAR
   purchase_session_id : BIGINT
-  matchday_id : BIGINT
+  round_id : BIGINT
   league_id : BIGINT
   total_amount : DECIMAL
   status : ENUM
@@ -76,14 +76,14 @@ entity promotions {
 entity matchday_prizes {
   * id : BIGINT
   --
-  matchday_id : BIGINT
+  round_id : BIGINT
   total_pool_percent : DECIMAL
 }
 
 entity ranking_snapshots {
   * id : BIGINT
   --
-  matchday_id : BIGINT
+  round_id : BIGINT
   type : ENUM
 }
 

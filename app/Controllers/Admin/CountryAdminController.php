@@ -8,179 +8,437 @@ use App\Core\Database;
 use App\Core\Request;
 use App\Core\Response;
 use PDO;
+use RuntimeException;
+use Throwable;
 
-/**
- * Administración de países (tabla countries).
- */
 class CountryAdminController extends BaseAdminController
 {
     private PDO $pdo;
 
-    public function __construct()
+    private function boot(): void
     {
-        $this->pdo = Database::getConnection();
+        if (!isset($this->pdo)) {
+            $this->pdo = Database::getConnection();
+        }
     }
 
     public function index(Request $request, Response $response): void
     {
         $this->requireAdmin();
+        $this->boot();
 
-        $countries = $this->pdo->query(
-            'SELECT * FROM countries ORDER BY name ASC'
-        )->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $q = trim((string)($_GET['q'] ?? ''));
+
+        $where = [];
+        $params = [];
+
+        if ($q !== '') {
+            $where[] = '(c.name LIKE :q OR c.iso_code LIKE :q OR c.phone_code LIKE :q)';
+            $params[':q'] = '%' . $q . '%';
+        }
+
+        $sql = '
+            SELECT
+                c.*,
+                cc.currency_code,
+                cc.currency_name,
+                cc.currency_symbol,
+                cc.exchange_rate_to_usd
+            FROM countries c
+            LEFT JOIN country_currency cc ON cc.country_code = c.iso_code
+        ';
+
+        if ($where !== []) {
+            $sql .= ' WHERE ' . implode(' AND ', $where);
+        }
+
+        $sql .= ' ORDER BY c.name ASC';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+
+        $countries = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         $this->render('admin/countries/index', [
-            'pageTitle' => 'Países',
+            'pageTitle' => 'Admin · Países',
             'countries' => $countries,
+            'filters' => [
+                'q' => $q,
+            ],
         ]);
     }
 
     public function create(Request $request, Response $response): void
     {
         $this->requireAdmin();
+        $this->boot();
 
-        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
-            $name   = isset($_POST['name']) ? trim((string)$_POST['name']) : '';
-            $iso    = isset($_POST['iso_code']) ? trim((string)$_POST['iso_code']) : '';
-            $sdname = isset($_POST['sportsdb_country_name']) ? trim((string)$_POST['sportsdb_country_name']) : '';
-
-            if ($name === '' || $iso === '') {
-                $_SESSION['flash_error'] = 'Nombre e ISO son obligatorios.';
-                header('Location: /admin/countries/create');
-                exit;
-            }
-
-            $flagPath = null;
-            if (!empty($_FILES['flag']['tmp_name'])) {
-                $flagPath = $this->storeFlagUpload($_FILES['flag']);
-            }
-
-            $stmt = $this->pdo->prepare(
-                'INSERT INTO countries (name, iso_code, sportsdb_country_name, flag_path, created_at, updated_at)
-                 VALUES (:name, :iso, :sdname, :flag, NOW(), NOW())'
-            );
-            $stmt->execute([
-                ':name'   => $name,
-                ':iso'    => $iso,
-                ':sdname' => $sdname,
-                ':flag'   => $flagPath,
-            ]);
-
-            $_SESSION['flash_success'] = 'País creado correctamente.';
-            header('Location: /admin/countries');
-            exit;
-        }
-
-        // CORRECCIÓN: Usamos 'form' en lugar de 'create'
         $this->render('admin/countries/form', [
             'pageTitle' => 'Crear país',
-            'country'   => null 
+            'country' => null,
         ]);
+    }
+
+    public function store(Request $request, Response $response): void
+    {
+        $this->requireAdmin();
+        $this->boot();
+
+        try {
+            $data = $this->sanitizeCountryData($_POST);
+
+            $this->pdo->beginTransaction();
+
+            $stmt = $this->pdo->prepare('
+                INSERT INTO countries (
+                    name,
+                    iso_code,
+                    phone_code,
+                    flag_emoji,
+                    is_active,
+                    created_at,
+                    updated_at
+                )
+                VALUES (
+                    :name,
+                    :iso_code,
+                    :phone_code,
+                    :flag_emoji,
+                    :is_active,
+                    NOW(),
+                    NOW()
+                )
+            ');
+
+            $stmt->execute([
+                ':name' => $data['name'],
+                ':iso_code' => $data['iso_code'],
+                ':phone_code' => $data['phone_code'],
+                ':flag_emoji' => $data['flag_emoji'],
+                ':is_active' => $data['is_active'],
+            ]);
+
+            $this->upsertCountryCurrency($data);
+
+            $this->pdo->commit();
+
+            header('Location: /admin/countries');
+            exit;
+        } catch (Throwable $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            error_log('Error creando país: ' . $e->getMessage());
+
+            $this->render('admin/countries/form', [
+                'pageTitle' => 'Crear país',
+                'country' => $_POST,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function edit(Request $request, Response $response): void
     {
         $this->requireAdmin();
+        $this->boot();
 
-        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        $id = (int)($_GET['id'] ?? 0);
+
         if ($id <= 0) {
-            $_SESSION['flash_error'] = 'País no especificado.';
             header('Location: /admin/countries');
             exit;
         }
 
-        $stmt = $this->pdo->prepare('SELECT * FROM countries WHERE id = :id');
-        $stmt->execute([':id' => $id]);
-        $country = $stmt->fetch(PDO::FETCH_ASSOC);
+        $country = $this->findCountryById($id);
 
         if (!$country) {
-            $_SESSION['flash_error'] = 'País no encontrado.';
-            header('Location: /admin/countries');
-            exit;
-        }
-
-        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
-            $name   = isset($_POST['name']) ? trim((string)$_POST['name']) : '';
-            $iso    = isset($_POST['iso_code']) ? trim((string)$_POST['iso_code']) : '';
-            $sdname = isset($_POST['sportsdb_country_name']) ? trim((string)$_POST['sportsdb_country_name']) : '';
-
-            if ($name === '' || $iso === '') {
-                $_SESSION['flash_error'] = 'Nombre e ISO son obligatorios.';
-                header('Location: /admin/countries/edit?id=' . $id);
-                exit;
-            }
-
-            $flagPath = $country['flag_path'] ?? null;
-            if (!empty($_FILES['flag']['tmp_name'])) {
-                $flagPath = $this->storeFlagUpload($_FILES['flag']);
-            }
-
-            $stmt = $this->pdo->prepare(
-                'UPDATE countries
-                 SET name = :name,
-                     iso_code = :iso,
-                     sportsdb_country_name = :sdname,
-                     flag_path = :flag,
-                     updated_at = NOW()
-                 WHERE id = :id'
-            );
-            $stmt->execute([
-                ':name'   => $name,
-                ':iso'    => $iso,
-                ':sdname' => $sdname,
-                ':flag'   => $flagPath,
-                ':id'     => $id,
-            ]);
-
-            $_SESSION['flash_success'] = 'País actualizado correctamente.';
             header('Location: /admin/countries');
             exit;
         }
 
         $this->render('admin/countries/form', [
             'pageTitle' => 'Editar país',
-            'country'   => $country,
+            'country' => $country,
         ]);
     }
 
-    public function delete(Request $request, Response $response): void
+    public function update(Request $request, Response $response): void
     {
         $this->requireAdmin();
+        $this->boot();
 
         $id = (int)($_POST['id'] ?? 0);
+
         if ($id <= 0) {
-            $_SESSION['flash_error'] = 'ID inválido.';
             header('Location: /admin/countries');
             exit;
         }
 
         try {
-            $stmt = $this->pdo->prepare('DELETE FROM countries WHERE id = :id');
-            $stmt->execute([':id' => $id]);
-            $_SESSION['flash_success'] = 'País eliminado correctamente.';
-        } catch (\Exception $e) {
-            $_SESSION['flash_error'] = 'No se puede eliminar el país (posiblemente tenga clubes asociados).';
+            $existing = $this->findCountryById($id);
+
+            if (!$existing) {
+                throw new RuntimeException('El país no existe.');
+            }
+
+            $data = $this->sanitizeCountryData($_POST);
+
+            $this->pdo->beginTransaction();
+
+            $stmt = $this->pdo->prepare('
+                UPDATE countries
+                SET
+                    name = :name,
+                    iso_code = :iso_code,
+                    phone_code = :phone_code,
+                    flag_emoji = :flag_emoji,
+                    is_active = :is_active,
+                    updated_at = NOW()
+                WHERE id = :id
+            ');
+
+            $stmt->execute([
+                ':id' => $id,
+                ':name' => $data['name'],
+                ':iso_code' => $data['iso_code'],
+                ':phone_code' => $data['phone_code'],
+                ':flag_emoji' => $data['flag_emoji'],
+                ':is_active' => $data['is_active'],
+            ]);
+
+            $oldIsoCode = strtoupper((string)($existing['iso_code'] ?? ''));
+
+            if ($oldIsoCode !== '' && $oldIsoCode !== $data['iso_code']) {
+                $deleteOldCurrency = $this->pdo->prepare('
+                    DELETE FROM country_currency
+                    WHERE country_code = :country_code
+                ');
+
+                $deleteOldCurrency->execute([
+                    ':country_code' => $oldIsoCode,
+                ]);
+            }
+
+            $this->upsertCountryCurrency($data);
+
+            $this->pdo->commit();
+
+            header('Location: /admin/countries');
+            exit;
+        } catch (Throwable $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            error_log('Error actualizando país: ' . $e->getMessage());
+
+            $country = $_POST;
+            $country['id'] = $id;
+
+            $this->render('admin/countries/form', [
+                'pageTitle' => 'Editar país',
+                'country' => $country,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    public function delete(Request $request, Response $response): void
+    {
+        $this->requireAdmin();
+        $this->boot();
+
+        $id = (int)($_POST['id'] ?? 0);
+
+        if ($id <= 0) {
+            header('Location: /admin/countries');
+            exit;
+        }
+
+        try {
+            $country = $this->findCountryById($id);
+
+            if (!$country) {
+                header('Location: /admin/countries');
+                exit;
+            }
+
+            $usedStmt = $this->pdo->prepare('
+                SELECT
+                    (
+                        SELECT COUNT(*) FROM leagues WHERE country_id = :id
+                    ) +
+                    (
+                        SELECT COUNT(*) FROM teams WHERE country_id = :id
+                    ) AS total_used
+            ');
+
+            $usedStmt->execute([
+                ':id' => $id,
+            ]);
+
+            $isUsed = (int)$usedStmt->fetchColumn() > 0;
+
+            if ($isUsed) {
+                $stmt = $this->pdo->prepare('
+                    UPDATE countries
+                    SET is_active = 0,
+                        updated_at = NOW()
+                    WHERE id = :id
+                ');
+
+                $stmt->execute([
+                    ':id' => $id,
+                ]);
+            } else {
+                $this->pdo->beginTransaction();
+
+                $deleteCurrency = $this->pdo->prepare('
+                    DELETE FROM country_currency
+                    WHERE country_code = :country_code
+                ');
+
+                $deleteCurrency->execute([
+                    ':country_code' => strtoupper((string)$country['iso_code']),
+                ]);
+
+                $deleteCountry = $this->pdo->prepare('
+                    DELETE FROM countries
+                    WHERE id = :id
+                ');
+
+                $deleteCountry->execute([
+                    ':id' => $id,
+                ]);
+
+                $this->pdo->commit();
+            }
+        } catch (Throwable $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            error_log('Error eliminando país: ' . $e->getMessage());
         }
 
         header('Location: /admin/countries');
         exit;
     }
 
- private function storeFlagUpload(array $file): string
+    private function findCountryById(int $id): ?array
     {
-        // CORRECCIÓN: Guardar en /assets/uploads/flags (SIN /public)
-        $basePath = dirname(__DIR__, 3) . '/assets/uploads/flags';
-        
-        if (!is_dir($basePath)) {
-            mkdir($basePath, 0775, true);
+        $stmt = $this->pdo->prepare('
+            SELECT
+                c.*,
+                cc.currency_code,
+                cc.currency_name,
+                cc.currency_symbol,
+                cc.exchange_rate_to_usd
+            FROM countries c
+            LEFT JOIN country_currency cc ON cc.country_code = c.iso_code
+            WHERE c.id = :id
+            LIMIT 1
+        ');
+
+        $stmt->execute([
+            ':id' => $id,
+        ]);
+
+        $country = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $country ?: null;
+    }
+
+    private function sanitizeCountryData(array $input): array
+    {
+        $name = trim((string)($input['name'] ?? ''));
+        $isoCode = strtoupper(trim((string)($input['iso_code'] ?? $input['country_code'] ?? '')));
+        $phoneCode = trim((string)($input['phone_code'] ?? ''));
+        $flagEmoji = trim((string)($input['flag_emoji'] ?? ''));
+
+        $currencyCode = strtoupper(trim((string)($input['currency_code'] ?? 'USD')));
+        $currencyName = trim((string)($input['currency_name'] ?? 'US Dollar'));
+        $currencySymbol = trim((string)($input['currency_symbol'] ?? '$'));
+        $exchangeRate = (float)($input['exchange_rate_to_usd'] ?? 1);
+
+        $isActive = isset($input['is_active']) ? (int)$input['is_active'] : 1;
+
+        if ($name === '') {
+            throw new RuntimeException('El nombre del país es obligatorio.');
         }
 
-        $ext = pathinfo($file['name'] ?? 'flag.png', PATHINFO_EXTENSION);
-        $filename = 'flag_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
-        $destPath = $basePath . '/' . $filename;
+        if ($isoCode === '') {
+            throw new RuntimeException('El código ISO del país es obligatorio.');
+        }
 
-        @move_uploaded_file($file['tmp_name'], $destPath);
+        if (strlen($isoCode) > 3) {
+            throw new RuntimeException('El código ISO debe tener máximo 3 caracteres.');
+        }
 
-        return '/assets/uploads/flags/' . $filename;
+        if ($currencyCode === '') {
+            $currencyCode = 'USD';
+        }
+
+        if ($currencyName === '') {
+            $currencyName = $currencyCode;
+        }
+
+        if ($currencySymbol === '') {
+            $currencySymbol = '$';
+        }
+
+        if ($exchangeRate <= 0) {
+            $exchangeRate = 1;
+        }
+
+        return [
+            'name' => $name,
+            'iso_code' => $isoCode,
+            'phone_code' => $phoneCode !== '' ? $phoneCode : null,
+            'flag_emoji' => $flagEmoji !== '' ? $flagEmoji : null,
+            'is_active' => $isActive === 1 ? 1 : 0,
+            'currency_code' => $currencyCode,
+            'currency_name' => $currencyName,
+            'currency_symbol' => $currencySymbol,
+            'exchange_rate_to_usd' => $exchangeRate,
+        ];
+    }
+
+    private function upsertCountryCurrency(array $data): void
+    {
+        $stmt = $this->pdo->prepare('
+            INSERT INTO country_currency (
+                country_code,
+                currency_code,
+                currency_name,
+                currency_symbol,
+                exchange_rate_to_usd,
+                updated_at
+            )
+            VALUES (
+                :country_code,
+                :currency_code,
+                :currency_name,
+                :currency_symbol,
+                :exchange_rate_to_usd,
+                NOW()
+            )
+            ON DUPLICATE KEY UPDATE
+                currency_code = VALUES(currency_code),
+                currency_name = VALUES(currency_name),
+                currency_symbol = VALUES(currency_symbol),
+                exchange_rate_to_usd = VALUES(exchange_rate_to_usd),
+                updated_at = NOW()
+        ');
+
+        $stmt->execute([
+            ':country_code' => $data['iso_code'],
+            ':currency_code' => $data['currency_code'],
+            ':currency_name' => $data['currency_name'],
+            ':currency_symbol' => $data['currency_symbol'],
+            ':exchange_rate_to_usd' => $data['exchange_rate_to_usd'],
+        ]);
     }
 }

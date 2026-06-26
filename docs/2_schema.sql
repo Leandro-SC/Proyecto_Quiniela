@@ -123,7 +123,7 @@ CREATE TABLE matchdays (
 
 CREATE TABLE matches (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  matchday_id BIGINT UNSIGNED NOT NULL,
+  round_id BIGINT UNSIGNED NOT NULL,
   league_id BIGINT UNSIGNED NOT NULL,
   season_id BIGINT UNSIGNED NOT NULL,
   external_id VARCHAR(64) NULL,
@@ -137,7 +137,7 @@ CREATE TABLE matches (
   extra_data JSON NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  CONSTRAINT fk_matches_matchday FOREIGN KEY (matchday_id) REFERENCES matchdays (id)
+  CONSTRAINT fk_matches_matchday FOREIGN KEY (round_id) REFERENCES matchdays (id)
     ON UPDATE CASCADE
     ON DELETE RESTRICT,
   CONSTRAINT fk_matches_league FOREIGN KEY (league_id) REFERENCES leagues (id)
@@ -152,7 +152,7 @@ CREATE TABLE matches (
   CONSTRAINT fk_matches_away_team FOREIGN KEY (away_team_id) REFERENCES teams (id)
     ON UPDATE CASCADE
     ON DELETE RESTRICT,
-  KEY idx_matches_matchday_status (matchday_id, status),
+  KEY idx_matches_matchday_status (round_id, status),
   KEY idx_matches_kickoff (kickoff_at),
   KEY idx_matches_external (external_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -233,7 +233,7 @@ CREATE TABLE tickets (
   player_id BIGINT UNSIGNED NOT NULL,
   ticket_code VARCHAR(50) NOT NULL,
   purchase_session_id BIGINT UNSIGNED NOT NULL,
-  matchday_id BIGINT UNSIGNED NOT NULL,
+  round_id BIGINT UNSIGNED NOT NULL,
   league_id BIGINT UNSIGNED NOT NULL,
   user_name VARCHAR(191) NOT NULL,
   phone VARCHAR(32) NOT NULL,
@@ -255,7 +255,7 @@ CREATE TABLE tickets (
   CONSTRAINT fk_tickets_ps FOREIGN KEY (purchase_session_id) REFERENCES purchase_sessions (id)
     ON UPDATE CASCADE
     ON DELETE RESTRICT,
-  CONSTRAINT fk_tickets_matchday FOREIGN KEY (matchday_id) REFERENCES matchdays (id)
+  CONSTRAINT fk_tickets_matchday FOREIGN KEY (round_id) REFERENCES matchdays (id)
     ON UPDATE CASCADE
     ON DELETE RESTRICT,
   CONSTRAINT fk_tickets_league FOREIGN KEY (league_id) REFERENCES leagues (id)
@@ -264,7 +264,7 @@ CREATE TABLE tickets (
   CONSTRAINT fk_tickets_promotion FOREIGN KEY (promotion_id) REFERENCES promotions (id)
     ON UPDATE CASCADE
     ON DELETE SET NULL,
-  KEY idx_tickets_matchday_status (matchday_id, status),
+  KEY idx_tickets_matchday_status (round_id, status),
   KEY idx_tickets_player (player_id, status),
   KEY idx_tickets_phone_created (phone, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -294,17 +294,17 @@ CREATE TABLE ticket_items (
 
 CREATE TABLE matchday_prizes (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  matchday_id BIGINT UNSIGNED NOT NULL,
+  round_id BIGINT UNSIGNED NOT NULL,
   total_pool_percent DECIMAL(5,2) NOT NULL DEFAULT 45.00,
   first_place_percent DECIMAL(5,2) NOT NULL DEFAULT 30.00,
   second_place_percent DECIMAL(5,2) NOT NULL DEFAULT 15.00,
   notes VARCHAR(255) NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  CONSTRAINT fk_matchday_prizes_matchday FOREIGN KEY (matchday_id) REFERENCES matchdays (id)
+  CONSTRAINT fk_matchday_prizes_matchday FOREIGN KEY (round_id) REFERENCES matchdays (id)
     ON UPDATE CASCADE
     ON DELETE CASCADE,
-  CONSTRAINT uq_matchday_prizes_unique UNIQUE (matchday_id)
+  CONSTRAINT uq_matchday_prizes_unique UNIQUE (round_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 /* ============================================================================
@@ -313,16 +313,16 @@ CREATE TABLE matchday_prizes (
 
 CREATE TABLE ranking_snapshots (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  matchday_id BIGINT UNSIGNED NULL,
+  round_id BIGINT UNSIGNED NULL,
   `type` ENUM('MATCHDAY','GLOBAL') NOT NULL DEFAULT 'MATCHDAY',
   generated_at DATETIME NOT NULL,
   `hash` CHAR(64) NOT NULL,
   notes VARCHAR(255) NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_ranking_snapshots_matchday FOREIGN KEY (matchday_id) REFERENCES matchdays (id)
+  CONSTRAINT fk_ranking_snapshots_matchday FOREIGN KEY (round_id) REFERENCES matchdays (id)
     ON UPDATE CASCADE
     ON DELETE SET NULL,
-  KEY idx_ranking_snapshots_type (type, matchday_id)
+  KEY idx_ranking_snapshots_type (type, round_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE ranking_snapshot_items (

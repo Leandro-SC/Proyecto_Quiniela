@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 /** @var array<string,mixed> $round */
@@ -8,6 +9,16 @@ declare(strict_types=1);
 /** @var array<string,mixed> $summary */
 
 ?>
+
+<?php
+$round = $round ?? null;
+$rounds = $rounds ?? [];
+$matches = $matches ?? [];
+$tickets = $tickets ?? [];
+$summary = $summary ?? [];
+$search = $search ?? ($searchQuery ?? '');
+?>
+
 <div class="mb-3 text-center">
     <h1 class="h4 mb-1 text-uppercase">
         <?= htmlspecialchars((string)$round['name'], ENT_QUOTES, 'UTF-8') ?>
@@ -40,10 +51,10 @@ declare(strict_types=1);
     <div class="col-12 col-md-4">
         <label class="form-label small mb-1">Búsqueda (código o nombre)</label>
         <input type="text"
-               name="q"
-               class="form-control form-control-sm"
-               value="<?= htmlspecialchars((string)$search, ENT_QUOTES, 'UTF-8') ?>"
-               placeholder="Buscar quiniela...">
+            name="q"
+            class="form-control form-control-sm"
+            value="<?= htmlspecialchars((string)$search, ENT_QUOTES, 'UTF-8') ?>"
+            placeholder="Buscar quiniela...">
     </div>
     <div class="col-12 col-md-2 d-flex align-items-end">
         <button type="submit" class="btn btn-sm btn-primary w-100">Aplicar</button>
@@ -80,13 +91,13 @@ declare(strict_types=1);
                                 <div class="d-flex justify-content-center gap-1">
                                     <?php if (!empty($m['home_team_logo'])): ?>
                                         <img src="<?= htmlspecialchars((string)$m['home_team_logo'], ENT_QUOTES, 'UTF-8') ?>"
-                                             alt="Local"
-                                             style="width:20px;height:20px;object-fit:contain;border-radius:50%;">
+                                            alt="Local"
+                                            style="width:20px;height:20px;object-fit:contain;border-radius:50%;">
                                     <?php endif; ?>
                                     <?php if (!empty($m['away_team_logo'])): ?>
                                         <img src="<?= htmlspecialchars((string)$m['away_team_logo'], ENT_QUOTES, 'UTF-8') ?>"
-                                             alt="Visita"
-                                             style="width:20px;height:20px;object-fit:contain;border-radius:50%;">
+                                            alt="Visita"
+                                            style="width:20px;height:20px;object-fit:contain;border-radius:50%;">
                                     <?php endif; ?>
                                 </div>
                             <?php endif; ?>
@@ -101,26 +112,13 @@ declare(strict_types=1);
             <tbody>
                 <?php foreach ($tickets as $t): ?>
                     <?php
-                    $items = json_decode((string)$t['items'], true);
-                    if (!is_array($items)) {
-                        $items = [];
-                    }
-                    // map match_id => pick
-                    $byMatch = [];
-                    foreach ($items as $it) {
-                        if (!is_array($it)) continue;
-                        $mid  = isset($it['match_id']) ? (int)$it['match_id'] : 0;
-                        $pick = isset($it['pick']) ? (string)$it['pick'] : '';
-                        if ($mid > 0 && $pick !== '') {
-                            $byMatch[$mid] = $pick;
-                        }
-                    }
+                    $byMatch = is_array($t['picks'] ?? null) ? $t['picks'] : [];
                     ?>
                     <tr>
                         <td class="small">
                             <strong><?= htmlspecialchars((string)$t['ticket_code'], ENT_QUOTES, 'UTF-8') ?></strong>
                             <br>
-                            <?= htmlspecialchars((string)$t['user_name'], ENT_QUOTES, 'UTF-8') ?>
+                            <?= htmlspecialchars((string)($t['user_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
                         </td>
                         <?php foreach ($matches as $m): ?>
                             <?php
@@ -143,7 +141,7 @@ declare(strict_types=1);
                             </td>
                         <?php endforeach; ?>
                         <td class="text-center table-warning fw-bold">
-                            <?= (int)$t['points'] ?>
+                            <?= (int)($t['points'] ?? 0) ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>
