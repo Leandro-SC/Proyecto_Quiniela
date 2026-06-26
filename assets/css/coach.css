@@ -1,0 +1,117 @@
+/* =========================================
+   COACH MARK / GUÍA CONTEXTUAL
+   ========================================= */
+
+#coach-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    z-index: 9999;
+    pointer-events: none; /* CRÍTICO: Permite hacer clic a través de la guía */
+    transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1); /* Movimiento suave */
+    opacity: 0; /* Oculto por defecto */
+    display: none;
+}
+
+#coach-overlay.active {
+    opacity: 1;
+    display: block;
+}
+
+/* La manito (Icono) */
+.coach-hand {
+    font-size: 2rem;
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%);
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+    animation: coach-bounce 1.5s infinite;
+}
+
+/* El mensaje (Tooltip) */
+.coach-tooltip {
+    background: #001f3f; /* Azul corporativo */
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    white-space: nowrap;
+    position: absolute;
+    top: 45px; /* Debajo de la mano */
+    left: 50%;
+    transform: translateX(-50%);
+    box-shadow: 0 4px 15px rgba(0,31,63,0.4);
+    border: 2px solid #ffc107; /* Borde dorado */
+}
+
+/* Triángulo del tooltip */
+.coach-tooltip::after {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    margin-left: -6px;
+    border-width: 6px;
+    border-style: solid;
+    border-color: transparent transparent #001f3f transparent;
+}
+
+/* Animación de rebote sutil */
+@keyframes coach-bounce {
+    0%, 100% { transform: translate(-50%, 0); }
+    50% { transform: translate(-50%, -10px); }
+}
+
+/* Ocultar en pantallas MUY pequeñas o apaisadas si estorba */
+@media (max-height: 400px) {
+    #coach-overlay { display: none !important; }
+}
+
+
+/* El mensaje (Tooltip) */
+.coach-tooltip {
+    display: none !important;/* ocultar el texto de ayuda (Tooltip) */
+    /* 👇 CAMBIO: Bajamos la opacidad a 0.4 (40% visible) */
+    background: rgba(0, 31, 63, 0.4); 
+    
+    /* Opcional: El texto un poco más transparente para fusionarse */
+    color: rgba(255, 255, 255, 0.85); 
+    
+    /* Efecto borroso para mantener legibilidad (Vidrio esmerilado) */
+    backdrop-filter: blur(4px); 
+    -webkit-backdrop-filter: blur(4px); /* Soporte Safari */
+    
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    white-space: nowrap;
+    position: absolute;
+    top: 45px;
+    left: 50%;
+    transform: translateX(-50%);
+    
+    /* Sombra muy suave */
+    box-shadow: 0 4px 15px rgba(0,31,63,0.1);
+    
+    /* Borde casi invisible */
+    border: 1px solid rgba(255, 255, 255, 0.2); 
+}
+
+/* Triángulo del tooltip (flechita) */
+.coach-tooltip::after {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    margin-left: -6px;
+    border-width: 6px;
+    border-style: solid;
+    
+    /* 👇 IMPORTANTE: La flecha debe tener la MISMA transparencia (0.4) */
+    border-color: transparent transparent rgba(0, 31, 63, 0.4) transparent;
+}

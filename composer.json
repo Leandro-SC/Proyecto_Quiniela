@@ -1,0 +1,19 @@
+{
+  "name": "tusitio/quiniela-pro",
+  "description": "Sistema de Quiniela Automatizada (Cliente + Admin) en PHP 8.2+ con MVC nativo.",
+  "type": "project",
+  "require": {
+    "php": "^8.2",
+    "ext-pdo": "*",
+    "vlucas/phpdotenv": "^5.6"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "app/"
+    }
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true
+  }
+}

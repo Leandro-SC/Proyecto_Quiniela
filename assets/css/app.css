@@ -1,0 +1,1659 @@
+/* Estilos base para QuinielaPro */
+
+/* Fondo hero con leve degradado */
+.bg-hero {
+    background: radial-gradient(circle at top, #343a40 0, #000000 60%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Tarjetas de costo y cierre */
+.bg-cost {
+    background: linear-gradient(135deg, #198754, #0f5132);
+    color: #fff;
+    border: none;
+}
+
+.bg-close {
+    background: linear-gradient(135deg, #dc3545, #842029);
+    color: #fff;
+    border: none;
+}
+
+/* Banner de geolocalización */
+.bg-geo-banner {
+    background: linear-gradient(90deg, #ffc107, #ffec99);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+/* Botones de liga (tipo cápsula) */
+.btn-league-custom {
+    border-radius: 999px;
+    border: 2px solid #000;
+    background: #dc3545;
+    color: #fff;
+    padding-inline: 1.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+}
+
+.btn-league-custom.active {
+    background: #ffc107;
+    color: #000;
+}
+
+/* Botones de elección L/E/V */
+.btn-choice {
+    border-radius: 999px;
+    padding: 0.25rem 0.75rem;
+    font-weight: 600;
+    border: 1px solid #6c757d;
+    background-color: #212529;
+    color: #f8f9fa;
+    min-width: 2.5rem;
+}
+
+.btn-choice.active {
+    background-color: #ffc107;
+    color: #000;
+    border-color: #ffc107;
+}
+
+/* Contador */
+.countdown {
+    gap: 0.5rem;
+}
+
+.countdown-item {
+    background-color: rgba(0, 0, 0, 0.6);
+    border-radius: 0.5rem;
+    padding: 0.35rem 0.6rem;
+    text-align: center;
+    min-width: 3.5rem;
+}
+
+.countdown-value {
+    display: block;
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.countdown-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: #adb5bd;
+}
+
+/* Botón flotante WhatsApp */
+.btn-whatsapp {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background-color: #25d366;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.4);
+    z-index: 1050;
+    text-decoration: none;
+}
+
+.btn-whatsapp::before {
+    content: "W";
+    font-weight: 900;
+    color: #ffffff;
+}
+
+/* Ajustes responsivos */
+
+@media (max-width: 575.98px) {
+    .navbar-brand {
+        font-size: 1rem;
+    }
+
+    .btn-league-custom {
+        font-size: 0.75rem;
+        padding-inline: 1rem;
+    }
+
+    .countdown-item {
+        min-width: 3rem;
+        padding: 0.3rem 0.4rem;
+    }
+}
+/* ===============================
+ * Quinielas anteriores (vista pública)
+ * Layout tipo Portland
+ * =============================== */
+
+.quiniela-prev-page {
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 0;
+    margin: -1rem -0.75rem 0 -0.75rem; /* extender sobre el container */
+    font-family: "Roboto Condensed", "Arial Narrow", Arial, sans-serif;
+}
+
+/* Encabezado superior + barra azul marino */
+.qh-top-bar {
+    background: #dcdcdc;
+    border-bottom: 4px solid #000066;
+    padding: 0.5rem 1rem;
+}
+
+.qh-logo-placeholder {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    color: #000066;
+    font-weight: 700;
+    font-size: 0.8rem;
+}
+
+.qh-logo-text {
+    text-transform: uppercase;
+}
+
+.qh-logo-sub {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+}
+
+.qh-event-title {
+    font-size: 1rem;
+    text-transform: uppercase;
+}
+
+.qh-event-subtitle {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    background: #000066;
+    padding: 0.2rem 0.5rem;
+    display: inline-block;
+    border-radius: 2px;
+}
+
+.qh-prizes-bar {
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+}
+
+/* Barra de búsqueda */
+.qh-search-bar {
+    background: #e6e6e6;
+    border-top: 2px solid #000066;
+    border-bottom: 2px solid #000066;
+    padding: 0.35rem 1rem;
+}
+
+.qh-search-label {
+    font-size: 0.8rem;
+    margin-right: 0.5rem;
+}
+
+.qh-search-input {
+    max-width: 260px;
+    border-radius: 0;
+    border: none;
+    border-bottom: 1px solid #000;
+    background: transparent;
+    font-size: 0.8rem;
+}
+
+/* Selector de jornada */
+.qh-round-selector {
+    background: #000066;
+    color: #fff;
+    padding: 0.25rem 1rem;
+    font-size: 0.8rem;
+}
+
+/* Tabla principal */
+.qh-table-wrapper {
+    background: #ffffff;
+    border-top: 4px solid #000066;
+}
+
+.qh-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.78rem;
+}
+
+.qh-table th,
+.qh-table td {
+    border: 1px solid #999;
+    padding: 0.2rem 0.3rem;
+}
+
+.qh-col-id {
+    min-width: 160px;
+    background: #ffffff;
+}
+
+.qh-col-match {
+    min-width: 80px;
+}
+
+.qh-col-pts {
+    min-width: 40px;
+}
+
+/* Encabezado de partidos */
+.qh-match-header {
+    background: #000066;
+    color: #ffffff;
+    padding: 0.2rem 0.1rem;
+}
+
+.qh-match-logo-row {
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+    margin-bottom: 0.1rem;
+}
+
+.qh-team-logo {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    border-radius: 50%;
+    background: #ffffff;
+}
+
+.qh-match-names {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.7rem;
+}
+
+.qh-team-name {
+    text-transform: uppercase;
+    line-height: 1.1;
+}
+
+.qh-match-score {
+    font-weight: 700;
+    font-size: 0.75rem;
+}
+
+/* Fila de resultados oficiales */
+.qh-result-row {
+    background: #000066;
+    color: #ffffff;
+}
+
+.qh-result-label {
+    text-transform: uppercase;
+}
+
+/* Celdas de predicción */
+.qh-cell-correct {
+    background: #00cc66;
+    color: #000000;
+    font-weight: 700;
+}
+
+.qh-cell-fail {
+    background: #ffffff;
+    color: #000000;
+}
+
+/* Columna de puntos (ranking) */
+.qh-pts-first {
+    background: #ffff00;
+    color: #000000;
+    font-weight: 700;
+}
+
+.qh-pts-second {
+    background: #3399ff;
+    color: #ffffff;
+    font-weight: 700;
+}
+
+/* Responsive básico */
+@media (max-width: 992px) {
+    .quiniela-prev-page {
+        margin: -1rem -0.5rem 0 -0.5rem;
+    }
+    .qh-table {
+        font-size: 0.7rem;
+    }
+    .qh-col-id {
+        min-width: 140px;
+    }
+}
+
+/* Hero principal con foto de Liga MX */
+.bg-hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    background:
+        linear-gradient(135deg, rgba(0,0,0,0.9), rgba(10,25,60,0.9)),
+        url("/assets/img/hero-ligamx.jpg") center center / cover no-repeat;
+}
+
+.bg-hero .card-body {
+    position: relative;
+    z-index: 1;
+}
+
+.text-league {
+    color: #ffda44; /* Amarillo dorado estilo Liga MX */
+}
+
+.text-hero-muted {
+    color: #d0d0d0;
+}
+
+/* Countdown más legible */
+.countdown-item {
+    background: rgba(0,0,0,0.75);
+    border-radius: 0.75rem;
+    padding: 0.35rem 0.75rem;
+    min-width: 64px;
+    text-align: center;
+}
+
+.countdown-value {
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.countdown-label {
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #aaaaaa;
+}
+
+/* Tarjetas costo/jornada */
+.bg-cost {
+    background: radial-gradient(circle at top left, #ff3b3b, #800000);
+}
+
+.bg-close {
+    background: radial-gradient(circle at top right, #ffa726, #ff6f00);
+}
+
+/* Tabla de partidos */
+.bg-matches {
+    background: #050b18;
+}
+
+.bg-matches-header {
+    background: #00123a;
+}
+
+.bg-matches .table-dark {
+    --bs-table-bg: transparent;
+}
+
+.team-logo {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    object-fit: contain;
+    background: #ffffff;
+}
+
+/* Botones de elección L/E/V */
+.btn-choice {
+    min-width: 42px;
+    font-weight: 600;
+    border-radius: 999px;
+}
+
+.btn-choice.btn-outline-light {
+    border-width: 1px;
+}
+
+.btn-choice.active,
+.btn-choice:focus {
+    background-color: #00c853;
+    border-color: #00c853;
+    color: #000;
+}
+
+/* Badge claro sobre fondo oscuro */
+.badge.bg-outline-light {
+    border: 1px solid rgba(255,255,255,0.6);
+    background: transparent;
+    color: #ffffff;
+}
+
+/* Ajustes responsivos */
+@media (max-width: 767.98px) {
+    .bg-hero {
+        margin-top: 0.5rem;
+    }
+
+    .countdown-item {
+        min-width: 56px;
+        padding: 0.25rem 0.5rem;
+    }
+
+    .team-logo {
+        width: 22px;
+        height: 22px;
+    }
+}
+
+
+
+/* =========================================
+   Estilo "Quiniela Changuita" - Replica
+   ========================================= */
+
+:root {
+    --ch-blue: #001f3f;      /* Azul marino fondo principal */
+    --ch-red: #ff0000;       /* Rojo intenso barra info */
+    --ch-gold: #ffc107;      /* Dorado acentos */
+    --ch-green: #25d366;     /* WhatsApp Green */
+    --ch-gray: #e0e0e0;      /* Bordes */
+}
+
+body {
+    background-color: var(--ch-blue) !important;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #333;
+    padding-bottom: 40px;
+}
+
+/* --- 1. HERO --- */
+.ch-hero {
+    position: relative;
+    height: 280px;
+    background: url("/assets/img/hero-ligamx.jpg") center center / cover no-repeat;
+    border-bottom: 4px solid var(--ch-gold);
+}
+.ch-hero-overlay {
+    background: rgba(0, 31, 63, 0.7); /* Capa azul semitransparente */
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Countdown Estilo Marcador */
+.ch-counter-box {
+    background: #e0e0e0; /* Fondo gris claro estilo marcador */
+    color: #000;
+    padding: 5px 10px;
+    border-radius: 4px;
+    min-width: 60px;
+    text-align: center;
+    border: 2px solid #999;
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+}
+.ch-counter-box span { font-family: 'Courier New', monospace; letter-spacing: 2px; }
+.ch-counter-box small { font-size: 0.6rem; font-weight: bold; color: #555; }
+
+/* --- 2. TABLA PARTIDOS --- */
+.ch-table-container {
+    width: 100%;
+    margin: 0 auto;
+    border-left: 1px solid #000;
+    border-right: 1px solid #000;
+}
+.ch-table th, .ch-table td {
+    border: 1px solid #999; /* Bordes grises visibles */
+    vertical-align: middle;
+}
+.ch-thead {
+    background-color: var(--ch-blue);
+    color: #fff;
+    border-bottom: 2px solid var(--ch-gold);
+    font-size: 0.9rem;
+}
+.ch-team-logo {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}
+
+/* Botones de Selección (Celdas Clickables) */
+.btn-ch-pick {
+    background-color: #fff;
+    color: transparent; /* Ocultamos la letra por defecto para limpieza, o la mostramos sutil */
+    color: #ccc;
+    font-weight: bold;
+    border: none;
+    transition: all 0.2s;
+}
+.btn-ch-pick:hover {
+    background-color: #f0f0f0;
+    color: #000;
+}
+/* Al seleccionar, se pone NEGRO o AZUL OSCURO como una "X" o relleno */
+.btn-ch-pick.active, .btn-ch-pick:focus {
+    background-color: var(--ch-blue) !important;
+    color: #fff !important;
+    box-shadow: inset 0 0 5px #000;
+}
+
+/* --- 3. BARRA ROJA INFO --- */
+.ch-info-bar {
+    border-top: 2px solid #fff;
+    border-bottom: 2px solid #fff;
+    font-size: 1.1rem;
+}
+.ch-bar-item.bg-dark { background-color: #001f3f !important; } /* Azul oscuro izquierda */
+.ch-bar-item.bg-danger { background-color: #ff0000 !important; } /* Rojo derecha */
+
+/* --- 4. FORMULARIO --- */
+.ch-form-area {
+    background-color: var(--ch-blue);
+    color: white;
+}
+.ch-input {
+    border-radius: 0;
+    border: 1px solid #ccc;
+    height: 45px;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+.ch-btn-add {
+    background-color: #0056b3; /* Azul estándar fuerte */
+    border: 1px solid #fff;
+    border-radius: 4px;
+}
+.ch-btn-whats {
+    background: linear-gradient(to bottom, #25d366, #128c7e);
+    border: 1px solid #fff;
+    border-radius: 4px;
+}
+
+
+/* --- Botón Flotante WhatsApp --- */
+.btn-whatsapp {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    width: 50px;
+    height: 50px;
+    background-color: #25d366;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    z-index: 9999;
+    border: 2px solid #fff;
+}
+.btn-whatsapp::before {
+    content: "W"; font-weight: 900; color: white; font-size: 24px; font-family: sans-serif;
+}
+
+
+
+/* =======================================================
+   ESTILO PORTLAND (Quiniela Anterior) - OVERRIDE FINAL
+   ======================================================= */
+
+/* Contenedor principal con fondo gris claro */
+.ph-wrapper {
+    background-color: #f0f0f0;
+    font-family: Arial, Helvetica, sans-serif;
+    padding: 15px;
+    color: #000 !important; /* Forzar texto negro */
+    min-height: 100vh;
+}
+
+/* Títulos y Barras Superiores */
+.ph-title-red {
+    color: #ff0000 !important;
+    font-weight: 900;
+    text-align: center;
+    text-transform: uppercase;
+    font-size: 16px;
+    margin-bottom: 5px;
+    text-shadow: none;
+}
+
+.ph-bar-blue {
+    background-color: #000080 !important; /* Azul Marino */
+    color: #fff !important;
+    padding: 8px;
+    text-align: center;
+    font-weight: 900;
+    text-transform: uppercase;
+    font-size: 18px;
+    border: 1px solid #000;
+    margin-bottom: 5px;
+}
+
+.ph-prizes {
+    text-align: center;
+    font-weight: bold;
+    font-size: 14px;
+    color: #000;
+    margin-bottom: 10px;
+}
+.ph-prizes span { color: #cc0000; font-weight: 900; }
+
+/* Tabla Estilo Portland */
+.ph-table-container {
+    overflow-x: auto;
+    background: #fff;
+    border: 2px solid #000;
+}
+
+.ph-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px; /* Fuente compacta */
+    color: #000;
+}
+
+.ph-table th, .ph-table td {
+    border: 1px solid #999;
+    padding: 4px 2px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Encabezados de la Tabla */
+.ph-row-header-label {
+    background-color: #fff;
+    font-weight: bold;
+    text-align: right;
+    padding-right: 8px;
+    width: 120px;
+    min-width: 100px;
+    text-transform: uppercase;
+}
+
+.ph-bg-blue {
+    background-color: #000080 !important;
+    color: #fff !important;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.ph-bg-darkblue {
+    background-color: #000040 !important; /* Un azul aún más oscuro para marcadores */
+    color: #fff !important;
+    font-weight: bold;
+}
+
+/* Logos en encabezado */
+.ph-team-logo {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+}
+
+/* Filas de participantes */
+.ph-cell-name {
+    text-align: left;
+    padding-left: 8px;
+    font-weight: bold;
+    background-color: #fff;
+    color: #000;
+    white-space: nowrap;
+}
+
+/* Celdas de pronóstico (L, E, V) */
+.ph-cell-pick {
+    font-weight: 900;
+    font-size: 12px;
+    width: 30px;
+}
+
+/* Colores de estado */
+.ph-hit {
+    background-color: #00cc00 !important; /* Verde intenso */
+    color: #000 !important;
+}
+
+.ph-miss {
+    background-color: #ffffff !important;
+    color: #000 !important;
+}
+
+/* Columna de Puntos */
+.ph-pts {
+    font-weight: 900;
+    font-size: 13px;
+    color: #000;
+    width: 40px;
+}
+
+.ph-rank-1 { background-color: #ffff00 !important; } /* Amarillo */
+.ph-rank-2 { background-color: #00ffff !important; } /* Cyan */
+.ph-rank-std { background-color: #ffff99 !important; } /* Amarillo pálido por defecto */
+
+/* Ajustes para inputs de búsqueda */
+.ph-search-box {
+    background-color: #ddd;
+    border: 1px solid #999;
+    padding: 10px;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+
+
+/* --- ESTILO PORTLAND (Quinielas Anteriores) --- */
+
+.portland-container {
+    background-color: #e6e6e6; /* Fondo gris claro general */
+    padding: 10px;
+    font-family: Arial, sans-serif;
+    color: #000 !important; /* Texto negro forzoso */
+    font-size: 12px;
+}
+
+/* Barra superior gris */
+.portland-top-bar {
+    background-color: #dcdcdc;
+    border-bottom: 4px solid #000066; /* Línea azul gruesa abajo */
+    padding: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.portland-select {
+    padding: 2px;
+    font-size: 12px;
+    border: 1px solid #999;
+}
+
+/* Textos Headers */
+.portland-red-text {
+    color: #ff0000 !important;
+    font-weight: 900;
+    text-transform: uppercase;
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+.portland-blue-banner {
+    background-color: #000066; /* Azul marino */
+    color: white !important;
+    font-weight: 900;
+    text-transform: uppercase;
+    font-size: 16px;
+    padding: 5px;
+    margin-bottom: 5px;
+}
+
+.portland-prizes {
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+/* Barra de filtros/estadísticas */
+.portland-stats-bar {
+    background-color: #d0d0d0;
+    border: 1px solid #999;
+    padding: 5px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.portland-input {
+    border: none;
+    border-bottom: 1px solid #000;
+    background: transparent;
+    width: 150px;
+    font-size: 12px;
+    padding: 2px;
+}
+.portland-counts {
+    text-align: right;
+    font-size: 11px;
+}
+
+/* TABLA PRINCIPAL */
+.portland-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+    text-align: center;
+    border: 2px solid #000; /* Borde exterior grueso */
+}
+
+.portland-table th, .portland-table td {
+    border: 1px solid #666; /* Bordes de celda */
+    padding: 3px 1px;
+    font-size: 11px;
+    vertical-align: middle;
+}
+
+/* Encabezados específicos */
+.ph-header-blue-row th {
+    background-color: #000066;
+    color: white !important;
+    font-weight: bold;
+    text-transform: uppercase;
+    padding: 4px;
+}
+
+.ph-row-dark th {
+    background-color: #000040; /* Azul muy oscuro para marcador/resultado */
+    color: white !important;
+    font-weight: bold;
+}
+
+.ph-label-cell {
+    background-color: #fff;
+    width: 200px; /* Ancho fijo columna nombres */
+    text-align: right;
+    padding-right: 10px;
+    font-weight: bold;
+}
+
+.ph-logo {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+}
+
+.ph-pts-header {
+    background-color: #000066;
+    color: white !important;
+    width: 50px;
+}
+
+/* Celdas de cuerpo */
+.ph-cell-name {
+    text-align: left;
+    padding-left: 5px;
+    font-weight: bold;
+    background-color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.ph-bg-green {
+    background-color: #00cc00 !important; /* Verde acierto */
+    color: black;
+}
+.ph-bg-white {
+    background-color: #ffffff !important;
+    color: black;
+}
+.ph-bg-yellow {
+    background-color: #ffff00 !important; /* Amarillo 1er lugar */
+    color: black;
+}
+.ph-bg-cyan {
+    background-color: #00ffff !important; /* Cyan otros */
+    color: black;
+}
+
+
+/* --- ESTILO PORTLAND (Quinielas Anteriores) --- */
+.portland-container {
+    background-color: #e6e6e6;
+    padding: 10px;
+    font-family: Arial, sans-serif;
+    color: #000 !important;
+    font-size: 12px;
+}
+.portland-top-bar {
+    background-color: #dcdcdc;
+    border-bottom: 4px solid #000066;
+    padding: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.portland-select { padding: 2px; font-size: 12px; border: 1px solid #999; }
+.portland-red-text {
+    color: #ff0000 !important;
+    font-weight: 900;
+    text-transform: uppercase;
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+.portland-blue-banner {
+    background-color: #000066;
+    color: white !important;
+    font-weight: 900;
+    text-transform: uppercase;
+    font-size: 16px;
+    padding: 5px;
+    margin-bottom: 5px;
+}
+.portland-prizes { font-weight: bold; font-size: 14px; margin-bottom: 10px; }
+.portland-stats-bar {
+    background-color: #d0d0d0;
+    border: 1px solid #999;
+    padding: 5px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.portland-input { border: none; border-bottom: 1px solid #000; background: transparent; width: 150px; font-size: 12px; padding: 2px; }
+.portland-counts { text-align: right; font-size: 11px; }
+
+/* TABLA */
+.portland-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+    text-align: center;
+    border: 2px solid #000;
+}
+.portland-table th, .portland-table td {
+    border: 1px solid #666;
+    padding: 3px 1px;
+    font-size: 11px;
+    vertical-align: middle;
+}
+.ph-header-blue-row th {
+    background-color: #000066;
+    color: white !important;
+    font-weight: bold;
+    text-transform: uppercase;
+    padding: 4px;
+}
+.ph-row-dark th {
+    background-color: #000040;
+    color: white !important;
+    font-weight: bold;
+}
+.ph-label-cell {
+    background-color: #fff;
+    width: 200px;
+    text-align: right;
+    padding-right: 10px;
+    font-weight: bold;
+}
+.ph-logo { width: 28px; height: 28px; object-fit: contain; display: block; margin: 0 auto; }
+.ph-pts-header { background-color: #000066; color: white !important; width: 50px; }
+.ph-cell-name {
+    text-align: left;
+    padding-left: 5px;
+    font-weight: bold;
+    background-color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+.ph-bg-green { background-color: #00cc00 !important; color: black; }
+.ph-bg-white { background-color: #ffffff !important; color: black; }
+.ph-bg-yellow { background-color: #ffff00 !important; color: black; }
+.ph-bg-cyan { background-color: #00ffff !important; color: black; }
+
+
+/* ESTILO PORTLAND */
+.portland-container { background-color: #e6e6e6; padding: 10px; font-family: Arial, sans-serif; color: #000; font-size: 12px; }
+.portland-top-bar { background-color: #dcdcdc; border-bottom: 4px solid #000066; padding: 8px; display: flex; justify-content: space-between; align-items: center; }
+.portland-select { padding: 2px; font-size: 12px; border: 1px solid #999; min-width: 250px; }
+.portland-red-text { color: #ff0000 !important; font-weight: 900; text-transform: uppercase; font-size: 14px; margin-bottom: 2px; }
+.portland-blue-banner { background-color: #000066; color: white !important; font-weight: 900; text-transform: uppercase; font-size: 16px; padding: 5px; margin-bottom: 5px; }
+.portland-prizes { font-weight: bold; font-size: 14px; margin-bottom: 10px; }
+.portland-stats-bar { background-color: #d0d0d0; border: 1px solid #999; padding: 5px 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.portland-input { border: none; border-bottom: 1px solid #000; background: transparent; width: 150px; font-size: 12px; padding: 2px; }
+.portland-counts { text-align: right; font-size: 11px; }
+.portland-table { width: 100%; border-collapse: collapse; background-color: #fff; text-align: center; border: 2px solid #000; }
+.portland-table th, .portland-table td { border: 1px solid #666; padding: 3px 1px; font-size: 11px; vertical-align: middle; }
+.ph-header-blue-row th { background-color: #000066; color: white !important; font-weight: bold; text-transform: uppercase; padding: 4px; }
+.ph-row-dark th { background-color: #000040; color: white !important; font-weight: bold; }
+.ph-label-cell { background-color: #fff; width: 200px; text-align: right; padding-right: 10px; font-weight: bold; }
+.ph-logo { width: 28px; height: 28px; object-fit: contain; display: block; margin: 0 auto; }
+.ph-pts-header { background-color: #000066; color: white !important; width: 50px; }
+.ph-cell-name { text-align: left; padding-left: 5px; font-weight: bold; background-color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+.ph-bg-green { background-color: #00cc00 !important; color: black; }
+.ph-bg-white { background-color: #ffffff !important; color: black; }
+.ph-bg-yellow { background-color: #ffff00 !important; color: black; }
+.ph-bg-cyan { background-color: #00ffff !important; color: black; }
+
+/* =========================================
+   NUEVO HEADER CLARO (Highlight Logo)
+   ========================================= */
+.navbar-light-custom {
+    background-color: #ffffff !important;
+    border-bottom: 4px solid #001f3f; /* Línea azul corporativa al final */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.navbar-light-custom .navbar-brand {
+    color: #001f3f !important;
+    font-size: 1.5rem;
+}
+
+.navbar-light-custom .nav-link {
+    color: #444 !important;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+}
+
+.navbar-light-custom .nav-link:hover,
+.navbar-light-custom .nav-link.active {
+    color: #d63384 !important; /* Color de acento al pasar el mouse */
+}
+
+/* =========================================
+   CRONÓMETRO DE URGENCIA
+   ========================================= */
+.ch-countdown-wrapper {
+    display: inline-block;
+    background-color: rgba(0, 0, 0, 0.6); /* Fondo semitransparente para legibilidad */
+    padding: 15px 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(5px);
+}
+
+.ch-counter-box {
+    background: linear-gradient(180deg, #ff416c 0%, #ff4b2b 100%); /* Degradado Rojo Alarma */
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 8px;
+    min-width: 70px;
+    text-align: center;
+    border: 2px solid #fff;
+    box-shadow: 0 4px 15px rgba(255, 75, 43, 0.5); /* Resplandor rojo */
+    position: relative;
+}
+
+.ch-counter-box .countdown-value {
+    font-family: 'Arial Black', sans-serif;
+    font-size: 1.8rem; /* Números grandes */
+    line-height: 1;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.ch-counter-box small {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 800;
+    margin-top: 4px;
+    color: rgba(255,255,255,0.9);
+}
+
+/* Animación de latido para los segundos (Sentido de urgencia) */
+.pulse-urgent {
+    animation: pulse-red 1s infinite;
+}
+
+@keyframes pulse-red {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 75, 43, 0.7); }
+    70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(255, 75, 43, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 75, 43, 0); }
+}
+
+
+
+/* assets/css/app.css */
+
+/* Hacemos que el contenedor del logo tenga una posición relativa para manejar el z-index */
+.brand-highlight {
+    position: relative;
+    display: flex;
+    align-items: center;
+    z-index: 1050; /* Asegura que esté por encima de otros elementos */
+    padding: 0 !important; /* Quitamos padding por defecto si molesta */
+}
+
+.brand-highlight img {
+    /* 1. Aumentamos el tamaño (ajusta según tu gusto, estándar es 40-50px) */
+    height: 75px; 
+    width: auto;
+    
+    /* 2. Transición suave para efectos visuales */
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s ease;
+    
+    /* 3. Sombra paralela para separarlo del fondo (Efecto 3D) */
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
+    
+    /* OPCIONAL: Si el navbar es oscuro y el logo también, descomenta esto para darle un brillo trasero */
+    /* background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 70%); */
+    /* border-radius: 50%; */
+}
+
+/* Efecto al pasar el mouse (Hover) */
+.brand-highlight:hover img {
+    transform: scale(1.1) rotate(-3deg); /* Crece un 10% y se inclina ligeramente */
+    filter: drop-shadow(0 8px 15px rgba(0, 0, 0, 0.5)); /* La sombra crece */
+}
+
+/* AJUSTE RESPONSIVE (Móvil) */
+@media (max-width: 991px) {
+    .brand-highlight img {
+        height: 55px; /* Un poco más pequeño en celulares para no romper el menú */
+    }
+}
+
+
+
+/* =========================================
+   ESTILO "APP MÓVIL" (max-width: 768px)
+   Transforma la tabla en Tarjetas (Cards)
+   ========================================= */
+
+@media (max-width: 768px) {
+    
+    /* 1. Reset de Contenedores */
+    .container {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+    
+    .ch-table-container {
+        background: transparent;
+        box-shadow: none;
+        border: none;
+    }
+
+    /* 2. Transformación de Tabla a Bloques Flexibles */
+    .ch-table thead { display: none; }
+    
+    .ch-table, .ch-table tbody, .ch-table tr, .ch-table td {
+        display: block;
+        width: 100%;
+        border: none;
+    }
+
+    /* Fila del Partido */
+    .ch-table tbody tr {
+        display: flex; /* Flexbox para alinear en una línea */
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        background: #fff;
+        margin-bottom: 6px;
+        padding: 8px 4px; /* Padding vertical 8px, horizontal 4px */
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    /* 3. Definición de Columnas (Celdas) */
+    
+    /* Celdas de Botones (L, E, V) - Ancho Fijo */
+    .ch-table td:nth-child(1),
+    .ch-table td:nth-child(3),
+    .ch-table td:nth-child(5) {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 var(--btn-size); /* No crecer, no encoger, base 32px */
+        width: var(--btn-size);
+        padding: 0;
+    }
+
+    /* Celdas de Equipos (Local, Visita) - Ancho Flexible */
+    .ch-table td:nth-child(2),
+    .ch-table td:nth-child(4) {
+        flex: 1 1 0; /* Crecer, Encoger, Base 0 (Clave para evitar desborde) */
+        min-width: 0; /* Permite al texto truncarse (...) */
+        padding: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    /* --- ESPACIADO ENTRE ELEMENTOS (MÁRGENES) --- */
+
+    /* Botón L (Separarlo del escudo local) */
+    .ch-table td:nth-child(1) { margin-right: 8px; }
+
+    /* Botón E (Separarlo de ambos equipos) */
+    .ch-table td:nth-child(3) { margin: 0 6px; }
+
+    /* Botón V (Separarlo del escudo visita) */
+    .ch-table td:nth-child(5) { margin-left: 8px; }
+
+
+    /* --- CONTENIDO INTERNO DE EQUIPOS --- */
+
+    /* LOCAL: [Logo] [Nombre] */
+    .ch-table td:nth-child(2) .d-flex {
+        justify-content: flex-start;
+        text-align: left;
+        width: 100%;
+    }
+    .ch-table td:nth-child(2) .ch-team-logo {
+        margin-right: 6px; /* Espacio Logo <-> Nombre */
+        margin-left: 0;
+    }
+
+    /* VISITA: [Nombre] [Logo] */
+    .ch-table td:nth-child(4) .d-flex {
+        justify-content: flex-end;
+        text-align: right;
+        width: 100%;
+    }
+    .ch-table td:nth-child(4) .ch-team-logo {
+        margin-left: 6px; /* Espacio Nombre <-> Logo */
+        margin-right: 0;
+    }
+
+    /* --- ESTILIZACIÓN FINAL --- */
+
+    /* Botones */
+    .btn-choice {
+        width: var(--btn-size);
+        height: var(--btn-size);
+        font-size: 11px;
+        padding: 0;
+        border-radius: 6px; /* Bordes suaves */
+        background-color: #f8f9fa;
+        color: #444;
+    }
+    
+    .btn-choice.active {
+        background-color: var(--ch-blue);
+        color: #fff;
+        border-color: var(--ch-blue);
+    }
+
+    /* Logos */
+    .ch-team-logo {
+        width: 22px;
+        height: 22px;
+        object-fit: contain;
+        flex-shrink: 0; /* Prohibido aplastar logo */
+    }
+
+    /* Texto de Equipos (Truncado) */
+    .align-middle span {
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #222;
+        line-height: 1.2;
+        display: block;
+        
+        /* Magia anti-desborde */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+
+/* =========================================
+   MEJORAS VISUALES: BOTONES Y WHATSAPP
+   ========================================= */
+
+/* 1. Botones L-E-V más grandes y táctiles */
+.btn-choice {
+    width: 45px;        /* Antes era ~38px, ahora más grande */
+    height: 45px;
+    font-size: 1.1rem;  /* Letra más grande */
+    border-width: 2px;  /* Borde más sólido */
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Efecto rebote suave */
+}
+
+/* 2. Color ROJO INTENSO al seleccionar (Active) */
+.btn-choice.active {
+    background-color: #dc3545 !important; /* Rojo Bootstrap (Danger) */
+    border-color: #dc3545 !important;
+    color: #ffffff !important;
+    transform: scale(1.15); /* Crece un poco más al seleccionar */
+    box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4); /* Sombra roja brillante */
+}
+
+/* 3. Ajuste para el botón de WhatsApp en su nueva posición */
+#btn-send-whatsapp {
+    background-color: #25d366; /* Verde oficial WhatsApp */
+    border: none;
+    transition: transform 0.2s;
+}
+#btn-send-whatsapp:active {
+    transform: scale(0.98); /* Efecto de clic */
+}
+
+
+/* =========================================
+   1. AJUSTE FINO PARA ESCRITORIO (Desktop)
+   Evita que el botón rojo se vea gigante o desborde
+   ========================================= */
+@media (min-width: 769px) {
+    .btn-choice {
+        width: 34px !important;  /* Tamaño contenido */
+        height: 34px !important;
+        font-size: 0.9rem !important;
+        border-width: 1px !important;
+        margin: 0 auto;
+    }
+    
+    .btn-choice.active {
+        transform: scale(1.1) !important; /* Crecimiento sutil, no explosivo */
+        box-shadow: 0 2px 6px rgba(220, 53, 69, 0.4) !important;
+    }
+}
+
+/* =========================================
+   2. ESTILO BOTÓN ELIMINAR (La X roja)
+   ========================================= */
+.btn-delete-row {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 16px;
+    line-height: 1;
+    transition: transform 0.2s;
+}
+.btn-delete-row:hover {
+    transform: scale(1.1) rotate(90deg); /* Pequeño efecto al pasar el mouse */
+}
+
+
+
+/* Botón X de eliminar (Círculo rojo pequeño) */
+.btn-delete-row {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    line-height: 1;
+    transition: all 0.2s;
+}
+
+.btn-delete-row:hover {
+    transform: scale(1.1) rotate(90deg); /* Pequeño efecto al pasar el mouse */
+    background-color: #c82333;
+}
+
+
+
+/* =========================================
+   AJUSTES FINALES MÓVIL (Logo, Tabla, Fecha)
+   ========================================= */
+@media (max-width: 768px) {
+    
+/* 1. El contenedor vuelve a la normalidad (Espacio entre elementos) */
+    .navbar-light-custom .container {
+        display: flex !important;
+        justify-content: space-between !important; /* Menu a los extremos */
+        position: relative !important; /* Referencia para el logo */
+        min-height: 70px; /* Altura mínima para que quepa el logo grande */
+    }
+
+/* 1. HACER ESPACIO: Aumentar altura de la barra de navegación */
+    .navbar-light-custom {
+        min-height: 85px !important; /* Forzamos una barra más alta */
+        padding: 5px 10px !important;
+        position: relative; /* Referencia para el logo */
+    }
+
+    .navbar-light-custom .container {
+        position: static !important; /* Dejamos que la navbar sea el padre relativo */
+        height: 100%;
+        display: flex;
+        align-items: center;
+    }
+
+    /* 2. LOGO: Posición Absoluta y Crecimiento */
+    .navbar-brand {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%); /* Centrado Perfecto */
+        margin: 0 !important;
+        padding: 0 !important;
+        z-index: 1; /* Detrás del menú */
+    }
+
+    /* 3. IMAGEN: Tamaño Máximo y Estilo "Llamativo" */
+    .brand-logo {
+        height: 75px !important; /* ¡TAMAÑO GRANDE! Ajusta esto si quieres más */
+        width: auto !important;
+        max-height: none !important; /* Romper límites de Bootstrap */
+        object-fit: contain;
+        
+        /* Efecto llamativo (Sombra suave) */
+        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15)); 
+        transition: transform 0.2s;
+    }
+    
+    /* Pequeña animación al tocar el logo (Opcional) */
+    .brand-logo:active {
+        transform: scale(0.95);
+    }
+
+    /* 4. MENÚ HAMBURGUESA: Asegurar que esté a la derecha */
+    .navbar-toggler {
+        position: relative;
+        z-index: 10; /* Por encima del logo si se cruzaran */
+        margin-left: auto !important; /* Empujar a la derecha */
+    }
+    /* --- 2. TABLA DE TICKET AGREGADO (Compacta) --- */
+    
+    /* Reducir fuente de toda la tabla */
+    #tickets-summary-body, #tickets-summary-body td, .table thead th {
+        font-size: 11px !important;
+        padding: 4px 2px !important; /* Menos relleno */
+    }
+
+    /* Ocultar columna Celular (Móvil) para ganar espacio */
+    .table thead th:nth-child(3), /* Cabecera Celular */
+    #tickets-summary-body td:nth-child(3) { /* Celda Celular */
+        display: none !important;
+    }
+    
+    /* Columna # (Índice) muy pequeña */
+    #tickets-summary-body td:nth-child(1) { width: 15px; text-align: center; }
+
+    /* Columna Pronósticos (Ajustar texto largo) */
+    #tickets-summary-body td:nth-child(4) {
+        max-width: 80px; /* Forzar límite */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis; /* Poner ... si es muy largo */
+    }
+
+    /* Botón X (Eliminar) ajustado */
+    .btn-delete-row {
+        width: 22px !important;
+        height: 22px !important;
+        font-size: 12px !important;
+    }
+}
+
+
+
+
+/* =================================================================
+   LOGO MÓVIL "SUPER SIZE" - FUERZA BRUTA
+   ================================================================= */
+@media (max-width: 991px) { /* Afecta a móviles y tablets verticales */
+
+    /* 1. Preparar la Barra de Navegación */
+    .navbar-light-custom {
+        min-height: 90px !important; /* Hacemos la barra más alta */
+        position: relative !important;
+    }
+
+    .navbar-light-custom .container, 
+    .navbar-light-custom .container-fluid {
+        position: static !important; /* Permitir que el logo flote libre */
+        display: flex !important;
+        justify-content: flex-end !important; /* Empujar menú a la derecha */
+        align-items: center !important;
+    }
+
+    /* 2. CENTRADO ABSOLUTO DEL CONTENEDOR DEL LOGO */
+    /* Apuntamos a todos los posibles contenedores */
+    .navbar-brand, 
+    .brand-highlight,
+    a.navbar-brand {
+        position: absolute !important;
+        left: 50% !important;
+        top: 50% !important;
+        transform: translate(-50%, -50%) !important; /* Centrado Matemático */
+        margin: 0 !important;
+        padding: 0 !important;
+        z-index: 10;
+        width: auto !important;
+        display: flex !important;
+        justify-content: center !important;
+    }
+
+    /* 3. LA IMAGEN DEL LOGO (GIGANTE Y LLAMATIVA) */
+    /* Apuntamos a todas las posibles imágenes */
+    .navbar-brand img, 
+    .brand-logo, 
+    .brand-highlight img {
+        height: 85px !important; /* TAMAÑO FORZADO */
+        width: auto !important;
+        max-height: unset !important; /* Eliminar límites de Bootstrap */
+        min-height: 85px !important;  /* Asegurar tamaño mínimo */
+        object-fit: contain !important;
+        
+        /* EFECTO LLAMATIVO: Sombra 3D */
+        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)) !important;
+    }
+
+    /* 4. MENÚ HAMBURGUESA (A la derecha) */
+    .navbar-toggler {
+        margin-left: auto !important; /* Empujar a la derecha */
+        position: relative !important;
+        z-index: 20 !important; /* Encima del logo */
+    }
+    
+    /* Ocultar texto si existe */
+    .brand-text { display: none !important; }
+}
+
+
+
+/* assets/css/app.css */
+
+/* ... tus estilos anteriores ... */
+
+/* FONDO DE IMAGEN GENERAL */
+body {
+    /* Fondo con imagen y capa oscura (overlay) para legibilidad */
+    background: linear-gradient(rgba(5, 11, 24, 0.85), rgba(5, 11, 24, 0.9)), 
+                url('/assets/img/fondo_qui.png') no-repeat center center fixed !important;
+    background-size: cover !important;
+}
+
+/* Opcional: Asegurar que el Navbar sea semitransparente para ver el fondo */
+.navbar-light-custom {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(5px);
+}
+
+
+
+
+/* LOGO OCULTO EN MÓVIL AL ABRIR MENÚ */
+@media (max-width: 991.98px) {
+    /* Cuando el nav tiene la clase 'menu-open', ocultamos el brand */
+    .navbar.menu-open .navbar-brand {
+        display: none !important;
+    }
+    
+    /* Opcional: Ajustar padding si es necesario para que se vea mejor */
+    .navbar.menu-open {
+        align-items: flex-start;
+    }
+}
+
+
+
+
+/* assets/css/app.css */
+
+/* ... (otros estilos) ... */
+
+/* FONDO PRINCIPAL MEJORADO */
+body {
+    /* Cambio clave:
+       1. Usamos un degradado vertical: Azul "Champions" arriba (más luz) -> Azul oscuro abajo (lectura).
+       2. Opacidad reducida (0.6 a 0.85) para dejar ver el estadio.
+    */
+    background: 
+        linear-gradient(
+            to bottom, 
+            rgba(0, 50, 120, 0.6),  /* Azul vibrante semitransparente arriba */
+            rgba(2, 10, 25, 0.9)    /* Oscuro abajo para que el contenido resalte */
+        ),
+        url('/assets/img/hero-ligamx.jpg') no-repeat center center fixed !important;
+    
+    background-size: cover !important;
+    
+    /* Aseguramos que el texto tenga sombra suave para leerse bien sobre las luces del estadio */
+   
+    min-height: 100vh;
+}
+
+/* Opcional: Si quieres que el bloque "Hero" (donde está el contador) 
+   sea un poco más translúcido para integrarse con el fondo nuevo */
+.ch-hero-overlay {
+    background: rgba(0, 31, 63, 0.5) !important; /* Más transparente (antes era 0.7) */
+    backdrop-filter: blur(3px); /* Efecto vidrio esmerilado moderno */
+    border-radius: 12px;
+}
+
+
+
+/* Corrección de altura del Hero para evitar superposición */
+.ch-hero {
+    min-height: 270px !important; /* Aumentamos altura mínima */
+    height: auto !important;      /* Permitimos que crezca si hay mucho contenido */
+    padding-bottom: 80px;         /* Espacio extra abajo */
+}
+
+.ch-hero-overlay {
+    position: relative;
+    padding-top: 100px;           /* Bajamos el contenido para que no pegue arriba */
+    padding-bottom: 60px;
+    background: rgba(0, 0, 0, 0.6); /* Oscurecer fondo para leer mejor */
+}
+
+/* Espacio seguro para el cronómetro */
+.ch-countdown-wrapper {
+    margin-top: 2rem !important;
+    margin-bottom: 3rem !important;
+    position: relative;
+    z-index: 10;                  /* Asegura que flote POR ENCIMA de todo */
+}
+
+/* Ajuste de la tabla para que no se meta debajo del Hero */
+.ch-table-container {
+    margin-top: -40px !important; /* Subimos la tabla solo un poco */
+    position: relative;
+    z-index: 20;
+    background: white;
+    border-radius: 12px;
+}
+
+
+
+
+
+
+
+
