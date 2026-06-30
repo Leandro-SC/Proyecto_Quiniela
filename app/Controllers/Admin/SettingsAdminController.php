@@ -1,9 +1,9 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
-use App\Controllers\Admin\BaseAdminController;
 use App\Core\Database;
 use App\Core\Request;
 use App\Core\Response;
@@ -11,10 +11,29 @@ use PDO;
 use RuntimeException;
 use Throwable;
 
+/**
+ * Administración de configuración general.
+ *
+ * Compatible con:
+ * settings:
+ * - setting_key
+ * - setting_value
+ *
+ * country_currency:
+ * - country_code
+ * - country_name
+ * - currency_code
+ * - currency_symbol
+ */
 class SettingsAdminController extends BaseAdminController
 {
     private PDO $pdo;
 
+    /**
+     * Inicializa conexión.
+     *
+     * @return void
+     */
     private function boot(): void
     {
         if (!isset($this->pdo)) {
@@ -22,24 +41,37 @@ class SettingsAdminController extends BaseAdminController
         }
     }
 
+    /**
+     * Muestra configuración general.
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return void
+     */
     public function index(Request $request, Response $response): void
     {
         $this->requireAdmin();
         $this->boot();
 
-        $settings = $this->getSettings();
-
         $this->render('admin/settings/index', [
             'pageTitle' => 'Admin · Configuración',
-            'settings' => $settings,
+            'settings' => $this->getSettings(),
             'countries' => $this->getCountries(),
             'currencies' => $this->getCurrencies(),
         ]);
     }
 
+    /**
+     * Actualiza configuración.
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return void
+     */
     public function update(Request $request, Response $response): void
     {
         $this->requireAdmin();
+        $this->requireValidCsrf();
         $this->boot();
 
         try {
@@ -54,7 +86,7 @@ class SettingsAdminController extends BaseAdminController
             header('Location: /admin/settings');
             exit;
         } catch (Throwable $e) {
-            error_log('Error actualizando settings: ' . $e->getMessage());
+            error_log('Error actualizando configuración: ' . $e->getMessage());
 
             $_SESSION['flash_error'] = $e->getMessage();
 
@@ -63,6 +95,11 @@ class SettingsAdminController extends BaseAdminController
         }
     }
 
+    /**
+     * Obtiene settings.
+     *
+     * @return array<string,string>
+     */
     private function getSettings(): array
     {
         $stmt = $this->pdo->query('
@@ -82,10 +119,15 @@ class SettingsAdminController extends BaseAdminController
         return array_merge($this->defaultSettings(), $settings);
     }
 
+    /**
+     * Valores por defecto.
+     *
+     * @return array<string,string>
+     */
     private function defaultSettings(): array
     {
         return [
-            'site_name' => 'Quinielas Villa',
+            'site_name' => 'Quinielas Villas',
             'site_description' => 'Sistema de quinielas deportivas',
             'whatsapp_phone' => '',
             'default_country' => 'MX',
@@ -103,9 +145,15 @@ class SettingsAdminController extends BaseAdminController
         ];
     }
 
+    /**
+     * Sanitiza configuración.
+     *
+     * @param array<string,mixed> $input
+     * @return array<string,string>
+     */
     private function sanitizeSettingsData(array $input): array
     {
-        $siteName = trim((string)($input['site_name'] ?? 'Quinielas Villa'));
+        $siteName = trim((string)($input['site_name'] ?? 'Quinielas Villas'));
         $siteDescription = trim((string)($input['site_description'] ?? ''));
         $whatsappPhone = preg_replace('/\D+/', '', (string)($input['whatsapp_phone'] ?? '')) ?? '';
 
@@ -130,11 +178,11 @@ class SettingsAdminController extends BaseAdminController
             throw new RuntimeException('El nombre del sitio es obligatorio.');
         }
 
-        if ($defaultCountry === '') {
+        if (!preg_match('/^[A-Z]{2}$/', $defaultCountry)) {
             $defaultCountry = 'MX';
         }
 
-        if ($defaultCurrency === '') {
+        if (!preg_match('/^[A-Z]{3}$/', $defaultCurrency)) {
             $defaultCurrency = 'MXN';
         }
 
@@ -174,18 +222,31 @@ class SettingsAdminController extends BaseAdminController
         ];
     }
 
+    /**
+     * Inserta o actualiza setting.
+     *
+     * @param string $key
+     * @param string $value
+     * @return void
+     */
     private function upsertSetting(string $key, string $value): void
     {
         $stmt = $this->pdo->prepare('
             INSERT INTO settings (
                 setting_key,
+                group_name,
                 setting_value,
+                setting_type,
+                is_public,
                 created_at,
                 updated_at
             )
             VALUES (
                 :setting_key,
+                :group_name,
                 :setting_value,
+                :setting_type,
+                :is_public,
                 NOW(),
                 NOW()
             )
@@ -196,10 +257,18 @@ class SettingsAdminController extends BaseAdminController
 
         $stmt->execute([
             ':setting_key' => $key,
+            ':group_name' => 'general',
             ':setting_value' => $value,
+            ':setting_type' => 'TEXT',
+            ':is_public' => 1,
         ]);
     }
 
+    /**
+     * Obtiene países activos.
+     *
+     * @return array<int,array<string,mixed>>
+     */
     private function getCountries(): array
     {
         $stmt = $this->pdo->query('
@@ -212,12 +281,16 @@ class SettingsAdminController extends BaseAdminController
         return $stmt ? ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
     }
 
+    /**
+     * Obtiene monedas disponibles.
+     *
+     * @return array<int,array<string,mixed>>
+     */
     private function getCurrencies(): array
     {
         $stmt = $this->pdo->query('
             SELECT DISTINCT
                 currency_code,
-                currency_name,
                 currency_symbol
             FROM country_currency
             ORDER BY currency_code ASC

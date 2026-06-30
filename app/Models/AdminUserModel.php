@@ -175,26 +175,36 @@ class AdminUserModel
      *
      * @return array<string,mixed>|null Usuario si es válido e activo, null si no coincide.
      */
-   public function verifyCredentials(string $username, string $plainPassword): ?array
+/**
+ * Verifica credenciales de login.
+ *
+ * No registra contraseñas ni información sensible en logs.
+ *
+ * @param string $username Usuario ingresado.
+ * @param string $plainPassword Contraseña en texto plano.
+ * @return array<string,mixed>|null
+ */
+public function verifyCredentials(string $username, string $plainPassword): ?array
 {
-    // Debug: loguear lo que llega
-    error_log('ADMIN_LOGIN: intentando login con username=' . $username);
+    $username = trim($username);
+
+    if ($username === '' || $plainPassword === '') {
+        return null;
+    }
 
     $user = $this->findByUsername($username);
+
     if ($user === null) {
-        error_log('ADMIN_LOGIN: usuario no encontrado');
         return null;
     }
 
     if ((int)$user['is_active'] !== 1) {
-        error_log('ADMIN_LOGIN: usuario inactivo');
         return null;
     }
 
-    $hash = (string)$user['password_hash'];
+    $hash = (string)($user['password_hash'] ?? '');
 
-    if (!password_verify($plainPassword, $hash)) {
-        error_log('ADMIN_LOGIN: password incorrecto');
+    if ($hash === '' || !password_verify($plainPassword, $hash)) {
         return null;
     }
 
@@ -203,18 +213,15 @@ class AdminUserModel
             $this->updatePassword((int)$user['id'], $plainPassword);
             $user = $this->findById((int)$user['id']) ?? $user;
         } catch (Throwable $e) {
-            Logger::warning('No se pudo rehashear contraseña de admin.', [
+            Logger::warning('No se pudo actualizar el hash de contraseña del administrador.', [
                 'admin_id' => $user['id'] ?? null,
-                'error'    => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }
 
-    error_log('ADMIN_LOGIN: login exitoso para admin_id=' . $user['id']);
-    
     return $user;
 }
-    
 
 
 

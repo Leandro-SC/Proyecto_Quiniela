@@ -1,158 +1,248 @@
 <?php
+
 declare(strict_types=1);
+
+use App\Core\Security;
 
 /** @var array<string,mixed> $stats */
 /** @var array<int,array<string,mixed>> $recentTickets */
 /** @var array<int,array<string,mixed>> $rounds */
 /** @var array<string,mixed> $filters */
 
-$fromValue = htmlspecialchars((string)($filters['from'] ?? ''), ENT_QUOTES, 'UTF-8');
-$toValue   = htmlspecialchars((string)($filters['to'] ?? ''), ENT_QUOTES, 'UTF-8');
+$fromValue = Security::e($filters['from'] ?? '');
+$toValue = Security::e($filters['to'] ?? '');
+
+$totalTickets = (int)($stats['total_tickets'] ?? 0);
+$paidTickets = (int)($stats['paid_tickets'] ?? 0);
+$pendingTickets = max(0, $totalTickets - $paidTickets);
+$paidRate = $totalTickets > 0 ? round(($paidTickets / $totalTickets) * 100) : 0;
 
 require __DIR__ . '/../partials/nav.php';
 ?>
-<div class="mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center">
-    <div>
-        <h1 class="h4 mb-1">Panel administrador</h1>
-        <p class="text-muted small mb-0">
-            Resumen operativo de quinielas y tickets.
-        </p>
-    </div>
-    <form class="row g-2 mt-3 mt-md-0" method="get" action="/admin">
-        <div class="col-auto">
-            <input type="date" name="from" class="form-control form-control-sm"
-                   value="<?= $fromValue ?>" placeholder="Desde">
+
+<div class="admin-mobile-page qv-admin-dashboard">
+    <header class="qv-admin-page-head">
+        <div>
+            <span class="qv-admin-eyebrow">Resumen operativo</span>
+            <h1>Panel administrador</h1>
+            <p>
+                Control rápido de tickets, jornadas, pagos y actividad reciente.
+            </p>
         </div>
-        <div class="col-auto">
-            <input type="date" name="to" class="form-control form-control-sm"
-                   value="<?= $toValue ?>" placeholder="Hasta">
-        </div>
-        <div class="col-auto">
-            <button type="submit" class="btn btn-sm btn-primary">
+
+        <form class="qv-admin-filter-card" method="get" action="/admin">
+            <div>
+                <label for="from" class="form-label">Desde</label>
+                <input
+                    type="date"
+                    name="from"
+                    id="from"
+                    class="form-control form-control-sm"
+                    value="<?= $fromValue ?>"
+                >
+            </div>
+
+            <div>
+                <label for="to" class="form-label">Hasta</label>
+                <input
+                    type="date"
+                    name="to"
+                    id="to"
+                    class="form-control form-control-sm"
+                    value="<?= $toValue ?>"
+                >
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="bi bi-funnel-fill me-1"></i>
                 Filtrar
             </button>
-        </div>
-    </form>
-</div>
+        </form>
+    </header>
 
-<div class="row g-3 mb-4">
-    <div class="col-12 col-md-4">
-        <div class="card shadow-sm border-0 h-100">
-            <div class="card-body">
-                <div class="text-muted small text-uppercase mb-1">
-                    Tickets totales (rango)
-                </div>
-                <div class="h4 mb-0">
-                    <?= (int)$stats['total_tickets'] ?>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-12 col-md-4">
-        <div class="card shadow-sm border-0 h-100">
-            <div class="card-body">
-                <div class="text-muted small text-uppercase mb-1">
-                    Tickets pagados
-                </div>
-                <div class="h4 mb-0">
-                    <?= (int)$stats['paid_tickets'] ?>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-12 col-md-4">
-        <div class="card shadow-sm border-0 h-100">
-            <div class="card-body">
-                <div class="text-muted small text-uppercase mb-1">
-                    Recaudado por moneda
-                </div>
-                <?php if (empty($stats['amount_by_currency'])): ?>
-                    <div class="small text-muted">Sin montos registrados.</div>
-                <?php else: ?>
-                    <?php foreach ($stats['amount_by_currency'] as $currency => $amount): ?>
-                        <div class="d-flex justify-content-between small">
-                            <span><?= htmlspecialchars((string)$currency, ENT_QUOTES, 'UTF-8') ?></span>
-                            <span><?= number_format((float)$amount, 2) ?></span>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="card shadow-sm border-0 mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <div>
-            <strong class="small text-uppercase">Últimos tickets</strong>
-        </div>
-        <a href="/admin/tickets" class="btn btn-sm btn-outline-primary">
-            Ver todos
+    <section class="qv-admin-quick-grid" aria-label="Acciones rápidas">
+        <a href="/admin/rounds" class="qv-admin-action-card">
+            <span class="qv-admin-action-icon">
+                <i class="bi bi-calendar-plus"></i>
+            </span>
+            <span>
+                <strong>Gestionar jornadas</strong>
+                <small>Crear, editar y cerrar fechas</small>
+            </span>
         </a>
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-sm mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Ticket</th>
-                        <th>Jornada</th>
-                        <th>Liga</th>
-                        <th>Cliente</th>
-                        <th>Monto</th>
-                        <th>Estado</th>
-                        <th>Fecha</th>
-                    </tr>
-                </thead>
-                <tbody>
-                <?php if (empty($recentTickets)): ?>
-                    <tr>
-                        <td colspan="7" class="text-center small py-3">
-                            No hay tickets en el rango seleccionado.
-                        </td>
-                    </tr>
+
+        <a href="/admin/tickets" class="qv-admin-action-card">
+            <span class="qv-admin-action-icon">
+                <i class="bi bi-receipt"></i>
+            </span>
+            <span>
+                <strong>Revisar tickets</strong>
+                <small>Validar pagos y estados</small>
+            </span>
+        </a>
+
+        <a href="/admin/promotions" class="qv-admin-action-card">
+            <span class="qv-admin-action-icon">
+                <i class="bi bi-megaphone-fill"></i>
+            </span>
+            <span>
+                <strong>Promociones</strong>
+                <small>Activar campañas visibles</small>
+            </span>
+        </a>
+
+        <a href="/admin/settings" class="qv-admin-action-card">
+            <span class="qv-admin-action-icon">
+                <i class="bi bi-gear-fill"></i>
+            </span>
+            <span>
+                <strong>Configuración</strong>
+                <small>Precios, país y contacto</small>
+            </span>
+        </a>
+    </section>
+
+    <section class="qv-admin-kpi-grid" aria-label="Indicadores principales">
+        <article class="qv-admin-kpi-card">
+            <div class="qv-admin-kpi-icon">
+                <i class="bi bi-ticket-perforated-fill"></i>
+            </div>
+
+            <div>
+                <span>Tickets totales</span>
+                <strong><?= number_format($totalTickets) ?></strong>
+                <small>Dentro del rango seleccionado</small>
+            </div>
+        </article>
+
+        <article class="qv-admin-kpi-card qv-admin-kpi-success">
+            <div class="qv-admin-kpi-icon">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+
+            <div>
+                <span>Tickets pagados</span>
+                <strong><?= number_format($paidTickets) ?></strong>
+                <small><?= $paidRate ?>% de conversión a pago</small>
+            </div>
+        </article>
+
+        <article class="qv-admin-kpi-card qv-admin-kpi-warning">
+            <div class="qv-admin-kpi-icon">
+                <i class="bi bi-hourglass-split"></i>
+            </div>
+
+            <div>
+                <span>Pendientes</span>
+                <strong><?= number_format($pendingTickets) ?></strong>
+                <small>Tickets por revisar</small>
+            </div>
+        </article>
+
+        <article class="qv-admin-kpi-card qv-admin-kpi-money">
+            <div class="qv-admin-kpi-icon">
+                <i class="bi bi-cash-stack"></i>
+            </div>
+
+            <div>
+                <span>Recaudado</span>
+
+                <?php if (empty($stats['amount_by_currency'])): ?>
+                    <strong>0.00</strong>
+                    <small>Sin montos registrados</small>
                 <?php else: ?>
-                    <?php foreach ($recentTickets as $t): ?>
-                        <tr>
-                            <td>
-                                <a href="/admin/tickets/show?id=<?= (int)$t['id'] ?>"
-                                   class="text-decoration-none">
-                                    <?= htmlspecialchars((string)$t['ticket_code'], ENT_QUOTES, 'UTF-8') ?>
-                                </a>
-                                <div class="small text-muted">
-                                    #<?= (int)$t['round_ticket_number'] ?> en jornada
-                                </div>
-                            </td>
-                            <td>
-                                <?= htmlspecialchars((string)$t['round_name'], ENT_QUOTES, 'UTF-8') ?>
-                                <div class="small text-muted">
-                                    Jornada <?= (int)$t['round_number'] ?>
-                                </div>
-                            </td>
-                            <td><?= htmlspecialchars((string)$t['league_name'], ENT_QUOTES, 'UTF-8') ?></td>
-                            <td>
-                                <?= htmlspecialchars((string)$t['user_name'], ENT_QUOTES, 'UTF-8') ?>
-                                <div class="small text-muted">
-                                    <?= htmlspecialchars((string)$t['phone'], ENT_QUOTES, 'UTF-8') ?>
-                                </div>
-                            </td>
-                            <td>
-                                <?= htmlspecialchars((string)$t['currency'], ENT_QUOTES, 'UTF-8') ?>
-                                <?= number_format((float)$t['total_amount'], 2) ?>
-                            </td>
-                            <td>
-                                <span class="badge bg-<?= $t['status'] === 'PAID' ? 'success' : ($t['status'] === 'PENDING' ? 'warning' : 'secondary') ?>">
-                                    <?= htmlspecialchars((string)$t['status'], ENT_QUOTES, 'UTF-8') ?>
-                                </span>
-                            </td>
-                            <td class="small text-muted">
-                                <?= htmlspecialchars((string)$t['created_at'], ENT_QUOTES, 'UTF-8') ?>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
+                    <div class="qv-admin-money-list">
+                        <?php foreach ($stats['amount_by_currency'] as $currency => $amount): ?>
+                            <div>
+                                <strong>
+                                    <?= Security::e($currency) ?> <?= number_format((float)$amount, 2) ?>
+                                </strong>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <small>Por moneda</small>
                 <?php endif; ?>
-                </tbody>
-            </table>
+            </div>
+        </article>
+    </section>
+
+    <section class="qv-admin-panel">
+        <div class="qv-admin-panel-head">
+            <div>
+                <span class="qv-admin-eyebrow">Actividad reciente</span>
+                <h2>Últimos tickets</h2>
+            </div>
+
+            <a href="/admin/tickets" class="btn btn-outline-primary btn-sm">
+                Ver todos
+            </a>
         </div>
-    </div>
+
+        <?php if (empty($recentTickets)): ?>
+            <div class="qv-admin-empty-state">
+                <i class="bi bi-inbox"></i>
+                <strong>No hay tickets en el rango seleccionado.</strong>
+                <span>Cuando se generen tickets, aparecerán aquí.</span>
+            </div>
+        <?php else: ?>
+            <div class="qv-admin-ticket-list">
+                <?php foreach ($recentTickets as $ticket): ?>
+                    <?php
+                    $ticketId = (int)($ticket['id'] ?? 0);
+                    $ticketCode = (string)($ticket['ticket_code'] ?? '');
+                    $roundName = (string)($ticket['round_name'] ?? '');
+                    $roundNumber = (int)($ticket['round_number'] ?? 0);
+                    $leagueName = (string)($ticket['league_name'] ?? '');
+                    $userName = (string)($ticket['user_name'] ?? '');
+                    $phone = (string)($ticket['phone'] ?? '');
+                    $currency = (string)($ticket['currency'] ?? '');
+                    $amount = (float)($ticket['total_amount'] ?? 0);
+                    $status = (string)($ticket['status'] ?? '');
+                    $createdAt = (string)($ticket['created_at'] ?? '');
+
+                    $statusClass = match ($status) {
+                        'PAID' => 'qv-status-paid',
+                        'PENDING' => 'qv-status-pending',
+                        default => 'qv-status-muted',
+                    };
+                    ?>
+
+                    <article class="qv-admin-ticket-card">
+                        <div class="qv-admin-ticket-main">
+                            <a href="/admin/tickets/show?id=<?= $ticketId ?>" class="qv-admin-ticket-code">
+                                <?= Security::e($ticketCode) ?>
+                            </a>
+
+                            <span>
+                                #<?= (int)($ticket['round_ticket_number'] ?? 0) ?> en jornada
+                            </span>
+                        </div>
+
+                        <div>
+                            <strong><?= Security::e($userName) ?></strong>
+                            <span><?= Security::e($phone) ?></span>
+                        </div>
+
+                        <div>
+                            <strong><?= Security::e($roundName) ?></strong>
+                            <span>
+                                Jornada <?= $roundNumber ?> · <?= Security::e($leagueName) ?>
+                            </span>
+                        </div>
+
+                        <div>
+                            <strong><?= Security::e($currency) ?> <?= number_format($amount, 2) ?></strong>
+                            <span><?= Security::e($createdAt) ?></span>
+                        </div>
+
+                        <div>
+                            <span class="qv-admin-status <?= $statusClass ?>">
+                                <?= Security::e($status) ?>
+                            </span>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </section>
 </div>

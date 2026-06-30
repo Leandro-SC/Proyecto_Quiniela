@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 /**
@@ -31,7 +32,8 @@ $usernameValue = htmlspecialchars((string)($old['username'] ?? ''), ENT_QUOTES, 
                     </div>
                 <?php endif; ?>
 
-                <form action="/admin/login" method="post" novalidate aria-describedby="admin-login-help">
+               <form action="/admin/login" method="post" novalidate aria-describedby="admin-login-help">
+    <?= \App\Core\Security::csrfInput() ?>
                     <div class="mb-3">
                         <label for="admin-username" class="form-label">
                             Usuario
@@ -43,8 +45,7 @@ $usernameValue = htmlspecialchars((string)($old['username'] ?? ''), ENT_QUOTES, 
                             name="username"
                             required
                             autocomplete="username"
-                            value="<?= $usernameValue ?>"
-                        >
+                            value="<?= $usernameValue ?>">
                     </div>
 
                     <div class="mb-3">
@@ -57,8 +58,7 @@ $usernameValue = htmlspecialchars((string)($old['username'] ?? ''), ENT_QUOTES, 
                             id="admin-password"
                             name="password"
                             required
-                            autocomplete="current-password"
-                        >
+                            autocomplete="current-password">
                     </div>
 
                     <p id="admin-login-help" class="form-text small text-muted mb-3">

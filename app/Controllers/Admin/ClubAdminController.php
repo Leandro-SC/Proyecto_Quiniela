@@ -110,8 +110,9 @@ class ClubAdminController extends BaseAdminController
 
     public function store(Request $request, Response $response): void
     {
-        $this->requireAdmin();
-        $this->boot();
+       $this->requireAdmin();
+$this->requireValidCsrf();
+$this->boot();
 
         try {
             $data = $this->sanitizeTeamData($_POST);
@@ -201,8 +202,9 @@ class ClubAdminController extends BaseAdminController
 
     public function update(Request $request, Response $response): void
     {
-        $this->requireAdmin();
-        $this->boot();
+       $this->requireAdmin();
+$this->requireValidCsrf();
+$this->boot();
 
         $id = (int)($_POST['id'] ?? 0);
 
@@ -274,8 +276,9 @@ class ClubAdminController extends BaseAdminController
 
     public function delete(Request $request, Response $response): void
     {
-        $this->requireAdmin();
-        $this->boot();
+     $this->requireAdmin();
+$this->requireValidCsrf();
+$this->boot();
 
         $id = (int)($_POST['id'] ?? 0);
 

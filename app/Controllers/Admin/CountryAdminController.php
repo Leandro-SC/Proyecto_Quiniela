@@ -1,9 +1,9 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
-use App\Controllers\Admin\BaseAdminController;
 use App\Core\Database;
 use App\Core\Request;
 use App\Core\Response;
@@ -11,10 +11,33 @@ use PDO;
 use RuntimeException;
 use Throwable;
 
+/**
+ * Administración de países.
+ *
+ * Compatible con la estructura real:
+ * countries:
+ * - id
+ * - name
+ * - iso_code
+ * - flag_path
+ * - external_country_name
+ * - is_active
+ *
+ * country_currency:
+ * - country_code
+ * - country_name
+ * - currency_code
+ * - currency_symbol
+ */
 class CountryAdminController extends BaseAdminController
 {
     private PDO $pdo;
 
+    /**
+     * Inicializa conexión.
+     *
+     * @return void
+     */
     private function boot(): void
     {
         if (!isset($this->pdo)) {
@@ -22,6 +45,13 @@ class CountryAdminController extends BaseAdminController
         }
     }
 
+    /**
+     * Lista países.
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return void
+     */
     public function index(Request $request, Response $response): void
     {
         $this->requireAdmin();
@@ -33,17 +63,22 @@ class CountryAdminController extends BaseAdminController
         $params = [];
 
         if ($q !== '') {
-            $where[] = '(c.name LIKE :q OR c.iso_code LIKE :q OR c.phone_code LIKE :q)';
+            $where[] = '(c.name LIKE :q OR c.iso_code LIKE :q OR c.external_country_name LIKE :q)';
             $params[':q'] = '%' . $q . '%';
         }
 
         $sql = '
             SELECT
-                c.*,
+                c.id,
+                c.name,
+                c.iso_code,
+                c.flag_path,
+                c.external_country_name,
+                c.is_active,
+                c.created_at,
+                c.updated_at,
                 cc.currency_code,
-                cc.currency_name,
-                cc.currency_symbol,
-                cc.exchange_rate_to_usd
+                cc.currency_symbol
             FROM countries c
             LEFT JOIN country_currency cc ON cc.country_code = c.iso_code
         ';
@@ -68,6 +103,13 @@ class CountryAdminController extends BaseAdminController
         ]);
     }
 
+    /**
+     * Muestra formulario de creación.
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return void
+     */
     public function create(Request $request, Response $response): void
     {
         $this->requireAdmin();
@@ -76,16 +118,30 @@ class CountryAdminController extends BaseAdminController
         $this->render('admin/countries/form', [
             'pageTitle' => 'Crear país',
             'country' => null,
+            'error' => null,
         ]);
     }
 
+    /**
+     * Crea país.
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return void
+     */
     public function store(Request $request, Response $response): void
     {
         $this->requireAdmin();
+        $this->requireValidCsrf();
         $this->boot();
 
         try {
             $data = $this->sanitizeCountryData($_POST);
+            $flagPath = $this->uploadFlag('flag');
+
+            if ($flagPath !== null) {
+                $data['flag_path'] = $flagPath;
+            }
 
             $this->pdo->beginTransaction();
 
@@ -93,8 +149,8 @@ class CountryAdminController extends BaseAdminController
                 INSERT INTO countries (
                     name,
                     iso_code,
-                    phone_code,
-                    flag_emoji,
+                    flag_path,
+                    external_country_name,
                     is_active,
                     created_at,
                     updated_at
@@ -102,8 +158,8 @@ class CountryAdminController extends BaseAdminController
                 VALUES (
                     :name,
                     :iso_code,
-                    :phone_code,
-                    :flag_emoji,
+                    :flag_path,
+                    :external_country_name,
                     :is_active,
                     NOW(),
                     NOW()
@@ -113,8 +169,8 @@ class CountryAdminController extends BaseAdminController
             $stmt->execute([
                 ':name' => $data['name'],
                 ':iso_code' => $data['iso_code'],
-                ':phone_code' => $data['phone_code'],
-                ':flag_emoji' => $data['flag_emoji'],
+                ':flag_path' => $data['flag_path'],
+                ':external_country_name' => $data['external_country_name'],
                 ':is_active' => $data['is_active'],
             ]);
 
@@ -139,6 +195,13 @@ class CountryAdminController extends BaseAdminController
         }
     }
 
+    /**
+     * Muestra formulario de edición.
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return void
+     */
     public function edit(Request $request, Response $response): void
     {
         $this->requireAdmin();
@@ -153,7 +216,7 @@ class CountryAdminController extends BaseAdminController
 
         $country = $this->findCountryById($id);
 
-        if (!$country) {
+        if ($country === null) {
             header('Location: /admin/countries');
             exit;
         }
@@ -161,12 +224,21 @@ class CountryAdminController extends BaseAdminController
         $this->render('admin/countries/form', [
             'pageTitle' => 'Editar país',
             'country' => $country,
+            'error' => null,
         ]);
     }
 
+    /**
+     * Actualiza país.
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return void
+     */
     public function update(Request $request, Response $response): void
     {
         $this->requireAdmin();
+        $this->requireValidCsrf();
         $this->boot();
 
         $id = (int)($_POST['id'] ?? 0);
@@ -179,11 +251,18 @@ class CountryAdminController extends BaseAdminController
         try {
             $existing = $this->findCountryById($id);
 
-            if (!$existing) {
+            if ($existing === null) {
                 throw new RuntimeException('El país no existe.');
             }
 
             $data = $this->sanitizeCountryData($_POST);
+            $flagPath = $this->uploadFlag('flag');
+
+            if ($flagPath === null) {
+                $flagPath = (string)($existing['flag_path'] ?? '');
+            }
+
+            $data['flag_path'] = $flagPath !== '' ? $flagPath : null;
 
             $this->pdo->beginTransaction();
 
@@ -192,19 +271,20 @@ class CountryAdminController extends BaseAdminController
                 SET
                     name = :name,
                     iso_code = :iso_code,
-                    phone_code = :phone_code,
-                    flag_emoji = :flag_emoji,
+                    flag_path = :flag_path,
+                    external_country_name = :external_country_name,
                     is_active = :is_active,
                     updated_at = NOW()
                 WHERE id = :id
+                LIMIT 1
             ');
 
             $stmt->execute([
                 ':id' => $id,
                 ':name' => $data['name'],
                 ':iso_code' => $data['iso_code'],
-                ':phone_code' => $data['phone_code'],
-                ':flag_emoji' => $data['flag_emoji'],
+                ':flag_path' => $data['flag_path'],
+                ':external_country_name' => $data['external_country_name'],
                 ':is_active' => $data['is_active'],
             ]);
 
@@ -245,9 +325,17 @@ class CountryAdminController extends BaseAdminController
         }
     }
 
+    /**
+     * Elimina o desactiva país si está en uso.
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return void
+     */
     public function delete(Request $request, Response $response): void
     {
         $this->requireAdmin();
+        $this->requireValidCsrf();
         $this->boot();
 
         $id = (int)($_POST['id'] ?? 0);
@@ -260,7 +348,7 @@ class CountryAdminController extends BaseAdminController
         try {
             $country = $this->findCountryById($id);
 
-            if (!$country) {
+            if ($country === null) {
                 header('Location: /admin/countries');
                 exit;
             }
@@ -287,6 +375,7 @@ class CountryAdminController extends BaseAdminController
                     SET is_active = 0,
                         updated_at = NOW()
                     WHERE id = :id
+                    LIMIT 1
                 ');
 
                 $stmt->execute([
@@ -307,6 +396,7 @@ class CountryAdminController extends BaseAdminController
                 $deleteCountry = $this->pdo->prepare('
                     DELETE FROM countries
                     WHERE id = :id
+                    LIMIT 1
                 ');
 
                 $deleteCountry->execute([
@@ -327,15 +417,26 @@ class CountryAdminController extends BaseAdminController
         exit;
     }
 
+    /**
+     * Busca país por ID.
+     *
+     * @param int $id
+     * @return array<string,mixed>|null
+     */
     private function findCountryById(int $id): ?array
     {
         $stmt = $this->pdo->prepare('
             SELECT
-                c.*,
+                c.id,
+                c.name,
+                c.iso_code,
+                c.flag_path,
+                c.external_country_name,
+                c.is_active,
+                c.created_at,
+                c.updated_at,
                 cc.currency_code,
-                cc.currency_name,
-                cc.currency_symbol,
-                cc.exchange_rate_to_usd
+                cc.currency_symbol
             FROM countries c
             LEFT JOIN country_currency cc ON cc.country_code = c.iso_code
             WHERE c.id = :id
@@ -348,97 +449,149 @@ class CountryAdminController extends BaseAdminController
 
         $country = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        return $country ?: null;
+        return $country !== false ? $country : null;
     }
 
+    /**
+     * Sanitiza país según columnas reales.
+     *
+     * @param array<string,mixed> $input
+     * @return array<string,mixed>
+     */
     private function sanitizeCountryData(array $input): array
     {
         $name = trim((string)($input['name'] ?? ''));
-        $isoCode = strtoupper(trim((string)($input['iso_code'] ?? $input['country_code'] ?? '')));
-        $phoneCode = trim((string)($input['phone_code'] ?? ''));
-        $flagEmoji = trim((string)($input['flag_emoji'] ?? ''));
-
+        $isoCode = strtoupper(trim((string)($input['iso_code'] ?? '')));
+        $externalCountryName = trim((string)($input['external_country_name'] ?? $input['sportsdb_country_name'] ?? ''));
         $currencyCode = strtoupper(trim((string)($input['currency_code'] ?? 'USD')));
-        $currencyName = trim((string)($input['currency_name'] ?? 'US Dollar'));
         $currencySymbol = trim((string)($input['currency_symbol'] ?? '$'));
-        $exchangeRate = (float)($input['exchange_rate_to_usd'] ?? 1);
-
-        $isActive = isset($input['is_active']) ? (int)$input['is_active'] : 1;
+        $isActive = isset($input['is_active']) ? 1 : 0;
 
         if ($name === '') {
             throw new RuntimeException('El nombre del país es obligatorio.');
         }
 
-        if ($isoCode === '') {
-            throw new RuntimeException('El código ISO del país es obligatorio.');
+        if (!preg_match('/^[A-Z]{2}$/', $isoCode)) {
+            throw new RuntimeException('El código ISO debe tener exactamente 2 letras.');
         }
 
-        if (strlen($isoCode) > 3) {
-            throw new RuntimeException('El código ISO debe tener máximo 3 caracteres.');
-        }
-
-        if ($currencyCode === '') {
+        if (!preg_match('/^[A-Z]{3}$/', $currencyCode)) {
             $currencyCode = 'USD';
-        }
-
-        if ($currencyName === '') {
-            $currencyName = $currencyCode;
         }
 
         if ($currencySymbol === '') {
             $currencySymbol = '$';
         }
 
-        if ($exchangeRate <= 0) {
-            $exchangeRate = 1;
-        }
-
         return [
             'name' => $name,
             'iso_code' => $isoCode,
-            'phone_code' => $phoneCode !== '' ? $phoneCode : null,
-            'flag_emoji' => $flagEmoji !== '' ? $flagEmoji : null,
-            'is_active' => $isActive === 1 ? 1 : 0,
+            'flag_path' => null,
+            'external_country_name' => $externalCountryName !== '' ? $externalCountryName : null,
+            'is_active' => $isActive,
             'currency_code' => $currencyCode,
-            'currency_name' => $currencyName,
             'currency_symbol' => $currencySymbol,
-            'exchange_rate_to_usd' => $exchangeRate,
         ];
     }
 
+    /**
+     * Inserta o actualiza moneda del país.
+     *
+     * @param array<string,mixed> $data
+     * @return void
+     */
     private function upsertCountryCurrency(array $data): void
     {
         $stmt = $this->pdo->prepare('
             INSERT INTO country_currency (
                 country_code,
+                country_name,
                 currency_code,
-                currency_name,
                 currency_symbol,
-                exchange_rate_to_usd,
+                created_at,
                 updated_at
             )
             VALUES (
                 :country_code,
+                :country_name,
                 :currency_code,
-                :currency_name,
                 :currency_symbol,
-                :exchange_rate_to_usd,
+                NOW(),
                 NOW()
             )
             ON DUPLICATE KEY UPDATE
+                country_name = VALUES(country_name),
                 currency_code = VALUES(currency_code),
-                currency_name = VALUES(currency_name),
                 currency_symbol = VALUES(currency_symbol),
-                exchange_rate_to_usd = VALUES(exchange_rate_to_usd),
                 updated_at = NOW()
         ');
 
         $stmt->execute([
             ':country_code' => $data['iso_code'],
+            ':country_name' => $data['name'],
             ':currency_code' => $data['currency_code'],
-            ':currency_name' => $data['currency_name'],
             ':currency_symbol' => $data['currency_symbol'],
-            ':exchange_rate_to_usd' => $data['exchange_rate_to_usd'],
         ]);
+    }
+
+    /**
+     * Sube bandera de país.
+     *
+     * @param string $inputName
+     * @return string|null
+     */
+    private function uploadFlag(string $inputName): ?string
+    {
+        if (
+            !isset($_FILES[$inputName]) ||
+            !isset($_FILES[$inputName]['error']) ||
+            $_FILES[$inputName]['error'] === UPLOAD_ERR_NO_FILE
+        ) {
+            return null;
+        }
+
+        if ($_FILES[$inputName]['error'] !== UPLOAD_ERR_OK) {
+            throw new RuntimeException('No se pudo subir la bandera.');
+        }
+
+        $tmpName = (string)($_FILES[$inputName]['tmp_name'] ?? '');
+        $size = (int)($_FILES[$inputName]['size'] ?? 0);
+
+        if ($tmpName === '' || !is_uploaded_file($tmpName)) {
+            throw new RuntimeException('Archivo de bandera inválido.');
+        }
+
+        if ($size <= 0 || $size > 1024 * 1024) {
+            throw new RuntimeException('La bandera no debe superar 1 MB.');
+        }
+
+        $mimeType = mime_content_type($tmpName);
+
+        $allowedMimeTypes = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/gif' => 'gif',
+            'image/webp' => 'webp',
+        ];
+
+        if (!isset($allowedMimeTypes[$mimeType])) {
+            throw new RuntimeException('Formato no permitido. Usa JPG, PNG, GIF o WEBP.');
+        }
+
+        $uploadDir = dirname(__DIR__, 3) . '/assets/uploads/flags/';
+
+        if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
+            throw new RuntimeException('No se pudo crear el directorio de banderas.');
+        }
+
+        $extension = $allowedMimeTypes[$mimeType];
+        $fileName = 'flag_' . date('Ymd_His') . '_' . bin2hex(random_bytes(8)) . '.' . $extension;
+        $targetPath = $uploadDir . $fileName;
+
+        if (!move_uploaded_file($tmpName, $targetPath)) {
+            throw new RuntimeException('No se pudo guardar la bandera.');
+        }
+
+        return '/assets/uploads/flags/' . $fileName;
     }
 }

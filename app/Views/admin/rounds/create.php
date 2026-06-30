@@ -17,7 +17,8 @@ require __DIR__ . '/../partials/nav.php';
 
 <div class="card">
     <div class="card-body">
-        <form method="post" action="/admin/rounds/store" novalidate>
+      <form method="post" action="/admin/rounds/store" novalidate>
+    <?= \App\Core\Security::csrfInput() ?>
             <div class="mb-3">
                 <label for="league_id" class="form-label">Liga</label>
                 <select name="league_id" id="league_id" class="form-select" required>

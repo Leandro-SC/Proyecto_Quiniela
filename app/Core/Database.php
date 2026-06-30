@@ -8,16 +8,25 @@ use PDOException;
 use RuntimeException;
 
 /**
- * Conexión PDO a la base de datos (singleton).
+ * Conexión PDO única de la aplicación.
+ *
+ * Decisiones:
+ * - No usa credenciales quemadas.
+ * - Desactiva prepared statements emulados.
+ * - Fuerza utf8mb4.
+ * - Lee timezone desde config/settings cuando esté disponible.
  */
 class Database
 {
     private static ?PDO $connection = null;
 
     /**
-     * Obtener conexión PDO única para toda la aplicación.
+     * Obtiene una conexión PDO reutilizable.
      *
-     * @throws RuntimeException|PDOException
+     * @return PDO
+     *
+     * @throws RuntimeException
+     * @throws PDOException
      */
     public static function getConnection(): PDO
     {
@@ -28,28 +37,24 @@ class Database
         $configPath = dirname(__DIR__, 2) . '/config/app.php';
 
         if (!is_file($configPath)) {
-            throw new RuntimeException('Archivo de configuración no encontrado: ' . $configPath);
+            throw new RuntimeException('No se encontró config/app.php.');
         }
 
         /** @var array<string,mixed> $config */
         $config = require $configPath;
 
-        if (!isset($config['database']) || !is_array($config['database'])) {
-            throw new RuntimeException('Configuración de base de datos inválida en config/app.php');
-        }
+        $db = $config['database'] ?? [];
 
-        $db = $config['database'];
+        $driver   = (string)($db['driver'] ?? 'mysql');
+        $host     = (string)($db['host'] ?? 'localhost');
+        $port     = (int)($db['port'] ?? 3306);
+        $database = (string)($db['database'] ?? '');
+        $username = (string)($db['username'] ?? '');
+        $password = (string)($db['password'] ?? '');
+        $charset  = (string)($db['charset'] ?? 'utf8mb4');
 
-        $driver    = $db['driver']    ?? 'mysql';
-        $host      = $db['host']      ?? '127.0.0.1';
-        $port      = (int)($db['port'] ?? 3306);
-        $dbname    = $db['database']  ?? 'u131981230_quinielasvilla';
-        $charset   = $db['charset']   ?? 'utf8mb4';
-        $username  = $db['username']  ?? 'u131981230_dev_quiniela';
-        $password  = $db['password']  ?? 'quinielasE$4@';
-
-        if ($dbname === '' || $username === '') {
-            throw new RuntimeException('Faltan datos obligatorios de conexión en config/app.php');
+        if ($database === '' || $username === '') {
+            throw new RuntimeException('Faltan credenciales de base de datos en variables de entorno.');
         }
 
         $dsn = sprintf(
@@ -57,35 +62,25 @@ class Database
             $driver,
             $host,
             $port,
-            $dbname,
+            $database,
             $charset
         );
 
-        try {
-            $pdo = new PDO(
-                $dsn,
-                $username,
-                $password,
-                [
-                    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                    PDO::ATTR_EMULATE_PREPARES   => false,
-                ]
-            );
+        $pdo = new PDO(
+            $dsn,
+            $username,
+            $password,
+            [
+                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES   => false,
+            ]
+        );
 
-            // --- CAMBIO PARA OKLAHOMA (UTC-6) ---
-            // Forzamos la zona horaria en la sesión de la base de datos
-            $pdo->exec("SET time_zone = '-06:00'");
-            // ------------------------------------
-
-        } catch (PDOException $e) {
-            throw new PDOException(
-                'Error de conexión a la base de datos: ' . $e->getMessage(),
-                (int)$e->getCode()
-            );
-        }
+        $pdo->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
 
         self::$connection = $pdo;
-        return $pdo;
+
+        return self::$connection;
     }
 }

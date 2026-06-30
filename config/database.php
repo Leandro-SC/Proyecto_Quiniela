@@ -1,13 +1,19 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * Configuración de base de datos.
+ *
+ * No colocar credenciales reales como valores por defecto.
+ * En producción deben venir exclusivamente desde .env.
+ */
 
 return [
-    'driver'   => getenv('DB_CONNECTION') !== false ? (string)getenv('DB_CONNECTION') : 'mysql',
-    'host'     => getenv('DB_HOST')       !== false ? (string)getenv('DB_HOST')       : 'localhost',
-    'port'     => getenv('DB_PORT')       !== false ? (int)getenv('DB_PORT')         : 3306,
-    'dbname'   => getenv('DB_DATABASE')   !== false ? (string)getenv('DB_DATABASE')   : 'u131981230_quinielasvilla',
-    'username' => getenv('DB_USERNAME')   !== false ? (string)getenv('DB_USERNAME')   : 'u131981230_dev_quiniela',
-    'password' => getenv('DB_PASSWORD')   !== false ? (string)getenv('DB_PASSWORD')   : 'quinielasE$4@',
-    'charset'  => getenv('DB_CHARSET')    !== false ? (string)getenv('DB_CHARSET')    : 'utf8mb4',
+    'driver'   => $_ENV['DB_CONNECTION'] ?? getenv('DB_CONNECTION') ?: 'mysql',
+    'host'     => $_ENV['DB_HOST']       ?? getenv('DB_HOST')       ?: 'localhost',
+    'port'     => (int)($_ENV['DB_PORT'] ?? getenv('DB_PORT')       ?: 3306),
+    'dbname'   => $_ENV['DB_DATABASE']   ?? getenv('DB_DATABASE')   ?: '',
+    'username' => $_ENV['DB_USERNAME']   ?? getenv('DB_USERNAME')   ?: '',
+    'password' => $_ENV['DB_PASSWORD']   ?? getenv('DB_PASSWORD')   ?: '',
+    'charset'  => $_ENV['DB_CHARSET']    ?? getenv('DB_CHARSET')    ?: 'utf8mb4',
 ];

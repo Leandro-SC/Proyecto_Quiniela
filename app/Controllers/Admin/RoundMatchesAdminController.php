@@ -77,6 +77,7 @@ class RoundMatchesAdminController extends BaseAdminController
     public function delete(Request $request, Response $response): void
     {
         $this->requireAdmin();
+        $this->requireValidCsrf();
 
         $matchId = (int)($_POST['id'] ?? 0);
         $roundId = (int)($_POST['round_id'] ?? 0);
@@ -127,6 +128,7 @@ class RoundMatchesAdminController extends BaseAdminController
         }
 
         if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+                $this->requireValidCsrf();
             try {
                 $this->handleSave($round, $matchId);
 

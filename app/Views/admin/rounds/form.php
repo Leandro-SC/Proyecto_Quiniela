@@ -36,6 +36,7 @@ require __DIR__ . '/../partials/nav.php';
 </div>
 
 <form method="post" action="<?= htmlspecialchars($action, ENT_QUOTES, 'UTF-8') ?>">
+    <?= \App\Core\Security::csrfInput() ?>
     <?php if ($isEdit): ?>
         <input type="hidden" name="id" value="<?= (int)$id ?>">
     <?php endif; ?>

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controllers\Admin;
@@ -143,6 +144,7 @@ class TicketAdminController extends BaseAdminController
     public function updateStatus(Request $request, Response $response): void
     {
         $this->requireAdmin();
+        $this->requireValidCsrf();
         $this->boot();
 
         if (strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET')) !== 'POST') {
@@ -153,7 +155,7 @@ class TicketAdminController extends BaseAdminController
         $ticketId = (int)($_POST['ticket_id'] ?? 0);
         $status = strtoupper(trim((string)($_POST['status'] ?? '')));
 
-        if ($ticketId <= 0 || !in_array($status, ['PENDING', 'PAID', 'CANCELLED'], true)) {
+        if ($ticketId <= 0 || !in_array($status, ['PENDING', 'PAID', 'REJECTED', 'CANCELLED'], true)) {
             $_SESSION['flash_error'] = 'Datos inválidos.';
             header('Location: /admin/tickets');
             exit;
@@ -206,10 +208,9 @@ class TicketAdminController extends BaseAdminController
         if ($sessionId > 0) {
             $sessionStatus = match ($status) {
                 'PAID' => 'COMPLETED',
-                'CANCELLED' => 'CANCELLED',
+                'CANCELLED', 'REJECTED' => 'CANCELLED',
                 default => 'OPEN',
             };
-
             $updateSession = $this->pdo->prepare('
                 UPDATE purchase_sessions
                 SET status = :status,
@@ -233,6 +234,7 @@ class TicketAdminController extends BaseAdminController
     public function delete(Request $request, Response $response): void
     {
         $this->requireAdmin();
+        $this->requireValidCsrf();
         $this->boot();
 
         $ticketId = (int)($_POST['ticket_id'] ?? 0);
@@ -336,27 +338,29 @@ class TicketAdminController extends BaseAdminController
     private function getTicketDetail(int $id): ?array
     {
         $stmt = $this->pdo->prepare('
-            SELECT
-                t.*,
-                r.name AS matchday_name,
-                r.name AS round_name,
-                r.round_number AS matchday_number,
-                l.name AS league_name,
-                ps.ip_address AS purchase_ip_address,
-                ps.country_code AS purchase_country,
-                ps.session_token,
-                ps.net_amount,
-                ps.gross_amount,
-                ps.discount_amount,
-                ps.currency AS payment_currency,
-                ps.status AS payment_status
-            FROM tickets t
-            INNER JOIN rounds r ON r.id = t.round_id
-            INNER JOIN leagues l ON l.id = r.league_id
-            LEFT JOIN purchase_sessions ps ON ps.id = t.purchase_session_id
-            WHERE t.id = :id
-            LIMIT 1
-        ');
+        SELECT
+            t.*,
+            t.player_id AS user_id,
+            t.ip_address AS purchase_ip_address,
+            t.country_code AS purchase_country,
+            r.name AS matchday_name,
+            r.name AS round_name,
+            r.round_number AS matchday_number,
+            l.name AS league_name,
+            ps.session_token AS session_code,
+            ps.session_token,
+            COALESCE(ps.net_amount, t.total_amount) AS net_amount,
+            COALESCE(ps.gross_amount, t.total_amount) AS gross_amount,
+            COALESCE(ps.discount_amount, 0.00) AS discount_amount,
+            COALESCE(ps.currency, t.currency) AS payment_currency,
+            ps.status AS payment_status
+        FROM tickets t
+        INNER JOIN rounds r ON r.id = t.round_id
+        INNER JOIN leagues l ON l.id = r.league_id
+        LEFT JOIN purchase_sessions ps ON ps.id = t.purchase_session_id
+        WHERE t.id = :id
+        LIMIT 1
+    ');
 
         $stmt->execute([
             ':id' => $id,

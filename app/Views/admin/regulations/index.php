@@ -44,7 +44,8 @@
             </small>
         </div>
         <div class="card-body">
-            <form action="/admin/regulations/update" method="POST">
+       <form action="/admin/regulations/update" method="POST">
+    <?= \App\Core\Security::csrfInput() ?>
                 <div class="mb-3">
                     <textarea id="editorReglamento" name="content"><?= htmlspecialchars($content) ?></textarea>
                 </div>

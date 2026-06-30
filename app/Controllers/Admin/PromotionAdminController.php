@@ -38,6 +38,7 @@ class PromotionAdminController extends BaseAdminController
     public function store(Request $request, Response $response): void
     {
         $this->requireAdmin();
+$this->requireValidCsrf();
 
         try {
             $data = $this->sanitizePromotionData($_POST);
@@ -93,7 +94,8 @@ class PromotionAdminController extends BaseAdminController
 
     public function update(Request $request, Response $response): void
     {
-        $this->requireAdmin();
+       $this->requireAdmin();
+$this->requireValidCsrf();
 
         $id = (int)($_POST['id'] ?? 0);
 
@@ -147,6 +149,7 @@ class PromotionAdminController extends BaseAdminController
     public function delete(Request $request, Response $response): void
     {
         $this->requireAdmin();
+$this->requireValidCsrf();
 
         $id = (int)($_POST['id'] ?? 0);
 

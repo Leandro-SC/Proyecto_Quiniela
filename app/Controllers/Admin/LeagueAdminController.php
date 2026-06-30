@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controllers\Admin;
@@ -108,18 +109,17 @@ class LeagueAdminController extends BaseAdminController
     public function store(Request $request, Response $response): void
     {
         $this->requireAdmin();
+        $this->requireValidCsrf();
         $this->boot();
-
         try {
             $data = $this->sanitizeLeagueData($_POST);
+            $backgroundPath = $this->uploadImage('image_background_file')
+                ?: trim((string)($_POST['image_background'] ?? ''));
 
-            $logoPath = $this->uploadImage('logo_file')
-                ?: trim((string)($_POST['logo_path'] ?? $_POST['image_logo'] ?? ''));
+            $bannerPath = $this->uploadImage('image_banner_file')
+                ?: trim((string)($_POST['image_banner'] ?? ''));
 
-            $bannerPath = $this->uploadImage('banner_file')
-                ?: trim((string)($_POST['banner_path'] ?? $_POST['image_banner'] ?? $_POST['image_background'] ?? ''));
-
-            $data = $this->applyImageFields($data, $logoPath, $bannerPath);
+            $data = $this->applyImageFields($data, $backgroundPath, $bannerPath);
 
             $this->insertLeague($data);
 
@@ -166,6 +166,7 @@ class LeagueAdminController extends BaseAdminController
     public function update(Request $request, Response $response): void
     {
         $this->requireAdmin();
+        $this->requireValidCsrf();
         $this->boot();
 
         $id = (int)($_POST['id'] ?? 0);
@@ -184,21 +185,21 @@ class LeagueAdminController extends BaseAdminController
 
             $data = $this->sanitizeLeagueData($_POST);
 
-            $logoPath = $this->uploadImage('logo_file')
-                ?: trim((string)($_POST['logo_path'] ?? $_POST['image_logo'] ?? ''));
+            $backgroundPath = $this->uploadImage('image_background_file')
+                ?: trim((string)($_POST['image_background'] ?? ''));
 
-            $bannerPath = $this->uploadImage('banner_file')
-                ?: trim((string)($_POST['banner_path'] ?? $_POST['image_banner'] ?? $_POST['image_background'] ?? ''));
+            $bannerPath = $this->uploadImage('image_banner_file')
+                ?: trim((string)($_POST['image_banner'] ?? ''));
 
-            if ($logoPath === '') {
-                $logoPath = (string)($existing['logo_path'] ?? $existing['image_logo'] ?? '');
+            if ($backgroundPath === '') {
+                $backgroundPath = (string)($existing['image_background'] ?? '');
             }
 
             if ($bannerPath === '') {
-                $bannerPath = (string)($existing['banner_path'] ?? $existing['image_banner'] ?? $existing['image_background'] ?? '');
+                $bannerPath = (string)($existing['image_banner'] ?? '');
             }
 
-            $data = $this->applyImageFields($data, $logoPath, $bannerPath);
+            $data = $this->applyImageFields($data, $backgroundPath, $bannerPath);
 
             $this->updateLeague($id, $data);
 
@@ -222,6 +223,7 @@ class LeagueAdminController extends BaseAdminController
     public function delete(Request $request, Response $response): void
     {
         $this->requireAdmin();
+        $this->requireValidCsrf();
         $this->boot();
 
         $id = (int)($_POST['id'] ?? 0);
@@ -302,13 +304,22 @@ class LeagueAdminController extends BaseAdminController
         return $this->normalizeLeagueForView($league);
     }
 
+    /**
+     * Sanitiza datos de liga según columnas reales disponibles.
+     *
+     * @param array<string,mixed> $input Datos recibidos por POST.
+     * @return array<string,mixed>
+     */
     private function sanitizeLeagueData(array $input): array
     {
         $name = trim((string)($input['name'] ?? ''));
         $slug = trim((string)($input['slug'] ?? ''));
         $countryId = (int)($input['country_id'] ?? 0);
         $description = trim((string)($input['description'] ?? ''));
-        $isActive = isset($input['is_active']) ? (int)$input['is_active'] : 1;
+        $externalId = trim((string)($input['external_id'] ?? ''));
+        $externalLeagueId = trim((string)($input['external_league_id'] ?? ''));
+        $color = trim((string)($input['color'] ?? '#6c757d'));
+        $isActive = isset($input['is_active']) ? 1 : 0;
         $displayOrder = (int)($input['display_order'] ?? 0);
 
         if ($name === '') {
@@ -319,6 +330,14 @@ class LeagueAdminController extends BaseAdminController
             $slug = $this->slugify($name);
         } else {
             $slug = $this->slugify($slug);
+        }
+
+        if (!preg_match('/^#[0-9a-fA-F]{6}$/', $color)) {
+            $color = '#6c757d';
+        }
+
+        if ($displayOrder < 0) {
+            $displayOrder = 0;
         }
 
         $data = [
@@ -334,8 +353,20 @@ class LeagueAdminController extends BaseAdminController
             $data['description'] = $description !== '' ? $description : null;
         }
 
+        if ($this->hasColumn('external_id')) {
+            $data['external_id'] = $externalId !== '' ? $externalId : null;
+        }
+
+        if ($this->hasColumn('external_league_id')) {
+            $data['external_league_id'] = $externalLeagueId !== '' ? $externalLeagueId : null;
+        }
+
+        if ($this->hasColumn('color')) {
+            $data['color'] = $color;
+        }
+
         if ($this->hasColumn('is_active')) {
-            $data['is_active'] = $isActive === 1 ? 1 : 0;
+            $data['is_active'] = $isActive;
         }
 
         if ($this->hasColumn('display_order')) {
@@ -345,28 +376,31 @@ class LeagueAdminController extends BaseAdminController
         return $data;
     }
 
-    private function applyImageFields(array $data, string $logoPath, string $bannerPath): array
+    /**
+     * Aplica imágenes de liga según columnas reales.
+     *
+     * La tabla actual usa:
+     * - image_background
+     * - image_banner
+     *
+     * @param array<string,mixed> $data Datos base.
+     * @param string $backgroundPath Ruta pública del fondo.
+     * @param string $bannerPath Ruta pública del banner.
+     * @return array<string,mixed>
+     */
+    private function applyImageFields(array $data, string $backgroundPath, string $bannerPath): array
     {
-        if ($logoPath !== '') {
-            if ($this->hasColumn('logo_path')) {
-                $data['logo_path'] = $logoPath;
-            } elseif ($this->hasColumn('image_logo')) {
-                $data['image_logo'] = $logoPath;
-            }
+        if ($backgroundPath !== '' && $this->hasColumn('image_background')) {
+            $data['image_background'] = $backgroundPath;
         }
 
-        if ($bannerPath !== '') {
-            if ($this->hasColumn('banner_path')) {
-                $data['banner_path'] = $bannerPath;
-            } elseif ($this->hasColumn('image_banner')) {
-                $data['image_banner'] = $bannerPath;
-            } elseif ($this->hasColumn('image_background')) {
-                $data['image_background'] = $bannerPath;
-            }
+        if ($bannerPath !== '' && $this->hasColumn('image_banner')) {
+            $data['image_banner'] = $bannerPath;
         }
 
         return $data;
     }
+
 
     private function insertLeague(array $data): void
     {
@@ -431,31 +465,60 @@ class LeagueAdminController extends BaseAdminController
         $stmt->execute();
     }
 
-    private function normalizeLeagueForView(array $league): array
-    {
-        $logo = (string)($league['logo_path'] ?? $league['image_logo'] ?? '');
-        $banner = (string)($league['banner_path'] ?? $league['image_banner'] ?? $league['image_background'] ?? '');
+/**
+ * Normaliza datos de liga para vistas.
+ *
+ * También corrige imágenes antiguas guardadas solo como nombre de archivo.
+ *
+ * @param array<string,mixed> $league
+ * @return array<string,mixed>
+ */
+private function normalizeLeagueForView(array $league): array
+{
+    $league['image_background'] = $this->normalizeImagePath((string)($league['image_background'] ?? ''));
+    $league['image_banner'] = $this->normalizeImagePath((string)($league['image_banner'] ?? ''));
+    $league['external_id'] = (string)($league['external_id'] ?? '');
+    $league['external_league_id'] = (string)($league['external_league_id'] ?? '');
+    $league['color'] = (string)($league['color'] ?? '#6c757d');
+    $league['is_active'] = isset($league['is_active']) ? (int)$league['is_active'] : 1;
+    $league['display_order'] = isset($league['display_order']) ? (int)$league['display_order'] : 0;
 
-        $league['logo_path'] = $logo;
-        $league['image_logo'] = $logo;
+    return $league;
+}
 
-        $league['banner_path'] = $banner;
-        $league['image_banner'] = $banner;
-        $league['image_background'] = $banner;
+/**
+ * Normaliza ruta de imagen de liga.
+ *
+ * @param string $path
+ * @return string
+ */
+private function normalizeImagePath(string $path): string
+{
+    $path = trim($path);
 
-        $league['is_active'] = isset($league['is_active']) ? (int)$league['is_active'] : 1;
-        $league['display_order'] = isset($league['display_order']) ? (int)$league['display_order'] : 0;
-
-        return $league;
+    if ($path === '') {
+        return '';
     }
+
+    if (str_starts_with($path, '/')) {
+        return $path;
+    }
+
+    if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+        return $path;
+    }
+
+    return '/assets/uploads/leagues/' . ltrim($path, '/');
+}
 
     private function getCountries(): array
     {
         $stmt = $this->pdo->query('
-            SELECT id, name
-            FROM countries
-            ORDER BY name ASC
-        ');
+    SELECT id, name, iso_code
+    FROM countries
+    WHERE is_active = 1
+    ORDER BY name ASC
+');
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
@@ -487,40 +550,65 @@ class LeagueAdminController extends BaseAdminController
         );
     }
 
-    private function uploadImage(string $inputName): ?string
-    {
-        if (
-            !isset($_FILES[$inputName]) ||
-            !isset($_FILES[$inputName]['error']) ||
-            $_FILES[$inputName]['error'] !== UPLOAD_ERR_OK
-        ) {
-            return null;
-        }
-
-        $uploadDir = dirname(__DIR__, 3) . '/assets/uploads/leagues/';
-
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
-        }
-
-        $originalName = basename((string)$_FILES[$inputName]['name']);
-        $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-
-        if (!in_array($extension, ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'], true)) {
-            throw new RuntimeException('Formato de imagen no permitido.');
-        }
-
-        $cleanName = preg_replace('/[^a-zA-Z0-9._-]/', '', $originalName) ?: 'league.' . $extension;
-        $fileName = 'league_' . time() . '_' . bin2hex(random_bytes(4)) . '_' . $cleanName;
-
-        $targetPath = $uploadDir . $fileName;
-
-        if (!move_uploaded_file((string)$_FILES[$inputName]['tmp_name'], $targetPath)) {
-            throw new RuntimeException('No se pudo subir la imagen.');
-        }
-
-        return '/assets/uploads/leagues/' . $fileName;
+  /**
+ * Sube imágenes de liga de forma segura.
+ *
+ * @param string $inputName Nombre del input file.
+ * @return string|null Ruta pública de la imagen.
+ */
+private function uploadImage(string $inputName): ?string
+{
+    if (
+        !isset($_FILES[$inputName]) ||
+        !isset($_FILES[$inputName]['error']) ||
+        $_FILES[$inputName]['error'] === UPLOAD_ERR_NO_FILE
+    ) {
+        return null;
     }
+
+    if ($_FILES[$inputName]['error'] !== UPLOAD_ERR_OK) {
+        throw new RuntimeException('No se pudo subir la imagen.');
+    }
+
+    $tmpName = (string)($_FILES[$inputName]['tmp_name'] ?? '');
+    $size = (int)($_FILES[$inputName]['size'] ?? 0);
+
+    if ($tmpName === '' || !is_uploaded_file($tmpName)) {
+        throw new RuntimeException('Archivo de imagen inválido.');
+    }
+
+    if ($size <= 0 || $size > 3 * 1024 * 1024) {
+        throw new RuntimeException('La imagen no debe superar los 3 MB.');
+    }
+
+    $mimeType = mime_content_type($tmpName);
+
+    $allowedMimeTypes = [
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png',
+        'image/webp' => 'webp',
+    ];
+
+    if (!isset($allowedMimeTypes[$mimeType])) {
+        throw new RuntimeException('Formato no permitido. Usa JPG, PNG o WEBP.');
+    }
+
+    $uploadDir = dirname(__DIR__, 3) . '/assets/uploads/leagues/';
+
+    if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
+        throw new RuntimeException('No se pudo crear el directorio de ligas.');
+    }
+
+    $extension = $allowedMimeTypes[$mimeType];
+    $fileName = 'league_' . date('Ymd_His') . '_' . bin2hex(random_bytes(8)) . '.' . $extension;
+    $targetPath = $uploadDir . $fileName;
+
+    if (!move_uploaded_file($tmpName, $targetPath)) {
+        throw new RuntimeException('No se pudo guardar la imagen.');
+    }
+
+    return '/assets/uploads/leagues/' . $fileName;
+}
 
     private function slugify(string $text): string
     {

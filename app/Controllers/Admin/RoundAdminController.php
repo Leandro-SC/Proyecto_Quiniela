@@ -43,6 +43,7 @@ class RoundAdminController extends BaseAdminController
     public function store(Request $request, Response $response): void
     {
         $this->requireAdmin();
+        $this->requireValidCsrf();
 
         try {
             $data = $this->sanitizeRoundData($_POST);
@@ -89,6 +90,7 @@ class RoundAdminController extends BaseAdminController
     public function update(Request $request, Response $response): void
     {
         $this->requireAdmin();
+    $this->requireValidCsrf();
 
         try {
             $data = $this->sanitizeRoundData($_POST);

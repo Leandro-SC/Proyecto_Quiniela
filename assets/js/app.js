@@ -432,3 +432,62 @@ document.addEventListener('DOMContentLoaded', function() {
     // ... tus otros inits ...
     initDynamicClock(); 
 });
+
+
+
+/**
+ * Feedback táctil para botones de pronóstico L/E/V.
+ * No cambia la lógica del sistema: solo añade microinteracción visual.
+ */
+document.addEventListener('click', function (event) {
+    var boton = event.target.closest('.btn-choice, .btn-ch-pick, .pick-option, .btn-pick, button[data-pick], .quiniela-pick');
+
+    if (!boton || boton.disabled) {
+        return;
+    }
+
+    var contenedor = boton.closest('tr, [data-match-id], .match-card, .quiniela-match');
+
+    if (contenedor) {
+        contenedor
+            .querySelectorAll('.btn-choice, .btn-ch-pick, .pick-option, .btn-pick, button[data-pick], .quiniela-pick')
+            .forEach(function (item) {
+                item.classList.remove('is-selected');
+            });
+    }
+
+    boton.classList.add('is-selected');
+});
+/**
+ * Crea y envía formularios POST administrativos con CSRF.
+ *
+ * Uso:
+ * window.enviarFormularioAdmin('/admin/leagues/delete', { id: 10 });
+ */
+window.enviarFormularioAdmin = function (action, fields) {
+    var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    var csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = action;
+
+    if (csrfToken !== '') {
+        var csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_csrf_token';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+    }
+
+    Object.keys(fields || {}).forEach(function (name) {
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = fields[name];
+        form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+};

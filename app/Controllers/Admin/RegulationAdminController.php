@@ -26,9 +26,10 @@ class RegulationAdminController extends BaseAdminController
 
     public function update(Request $request, Response $response): void
     {
-        $this->requireAdmin();
+      $this->requireAdmin();
+$this->requireValidCsrf();
 
-        $content = (string)($_POST['content'] ?? '');
+$content = (string)($_POST['content'] ?? '');
 
         $model = new RegulationModel();
         $model->save($content);

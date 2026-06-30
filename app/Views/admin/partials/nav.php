@@ -1,119 +1,186 @@
 <?php
+
 declare(strict_types=1);
 
-/*
- * Menú de navegación para el módulo Admin.
- * Bootstrap 5.3, responsivo y compacto.
+/**
+ * Sidebar administrador moderno.
+ *
+ * Desktop:
+ * - Menú lateral compacto.
+ * - Se expande con hover.
+ *
+ * Mobile:
+ * - Drawer lateral animado.
  */
 
-/**
- * Determina si la ruta actual coincide con el patrón dado,
- * para aplicar la clase "active".
- */
 $currentUri = $_SERVER['REQUEST_URI'] ?? '/';
 
-/**
- * Función simple para marcar activo.
- */
 $adminIsActive = static function (string $pattern) use ($currentUri): string {
     if ($pattern === '/admin') {
-        return ($currentUri === '/admin' || strpos($currentUri, '/admin?') === 0) ? 'active' : '';
+        return ($currentUri === '/admin' || $currentUri === '/admin/dashboard') ? 'active' : '';
     }
 
     return str_starts_with($currentUri, $pattern) ? 'active' : '';
 };
+
+$menuItems = [
+    [
+        'label' => 'Dashboard',
+        'href' => '/admin',
+        'icon' => 'bi-speedometer2',
+        'active' => $adminIsActive('/admin'),
+    ],
+    [
+        'label' => 'Jornadas',
+        'href' => '/admin/rounds',
+        'icon' => 'bi-calendar-event',
+        'active' => $adminIsActive('/admin/rounds'),
+    ],
+    [
+        'label' => 'Tickets',
+        'href' => '/admin/tickets',
+        'icon' => 'bi-receipt',
+        'active' => $adminIsActive('/admin/tickets'),
+    ],
+    [
+        'label' => 'Ranking',
+        'href' => '/admin/ranking',
+        'icon' => 'bi-trophy-fill',
+        'active' => $adminIsActive('/admin/ranking'),
+    ],
+    [
+        'label' => 'Promociones',
+        'href' => '/admin/promotions',
+        'icon' => 'bi-megaphone-fill',
+        'active' => $adminIsActive('/admin/promotions'),
+    ],
+    [
+        'label' => 'Testimonios',
+        'href' => '/admin/testimonials',
+        'icon' => 'bi-chat-quote-fill',
+        'active' => $adminIsActive('/admin/testimonials'),
+    ],
+    [
+        'label' => 'Ligas',
+        'href' => '/admin/leagues',
+        'icon' => 'bi-trophy',
+        'active' => $adminIsActive('/admin/leagues'),
+    ],
+    [
+        'label' => 'Clubes',
+        'href' => '/admin/clubs',
+        'icon' => 'bi-shield-shaded',
+        'active' => $adminIsActive('/admin/clubs'),
+    ],
+    [
+        'label' => 'Países',
+        'href' => '/admin/countries',
+        'icon' => 'bi-flag-fill',
+        'active' => $adminIsActive('/admin/countries'),
+    ],
+    [
+        'label' => 'Reglamento',
+        'href' => '/admin/regulations',
+        'icon' => 'bi-file-text',
+        'active' => $adminIsActive('/admin/regulations'),
+    ],
+    [
+        'label' => 'Configuración',
+        'href' => '/admin/settings',
+        'icon' => 'bi-gear-fill',
+        'active' => $adminIsActive('/admin/settings'),
+    ],
+];
 ?>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-3" aria-label="Navegación principal del administrador">
-    <div class="container-fluid">
-        <a class="navbar-brand fw-semibold" href="/admin">
-            Panel Admin
+<button
+    type="button"
+    class="qv-admin-mobile-toggle"
+    data-admin-sidebar-open
+    aria-label="Abrir menú administrador"
+>
+    <i class="bi bi-list"></i>
+</button>
+
+<div class="qv-admin-sidebar-backdrop" data-admin-sidebar-close></div>
+
+<aside class="qv-admin-sidebar" aria-label="Menú administrador">
+    <div class="qv-admin-sidebar-header">
+        <a href="/admin" class="qv-admin-sidebar-brand">
+            <span class="qv-admin-brand-mark">
+                <img src="/assets/img/logo_quiniela.png" alt="Quinielas Villas">
+            </span>
+
+            <span class="qv-admin-brand-copy">
+                <strong>Quinielas Villas</strong>
+                <small>Panel administrador</small>
+            </span>
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                data-bs-target="#adminNavbar" aria-controls="adminNavbar"
-                aria-expanded="false" aria-label="Mostrar/ocultar menú">
-            <span class="navbar-toggler-icon"></span>
+
+        <button
+            type="button"
+            class="qv-admin-sidebar-close"
+            data-admin-sidebar-close
+            aria-label="Cerrar menú"
+        >
+            <i class="bi bi-x-lg"></i>
         </button>
-
-        <div class="collapse navbar-collapse" id="adminNavbar">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-
-                <li class="nav-item">
-                    <a class="nav-link <?= $adminIsActive('/admin') ?>"
-                       href="/admin">
-                        Dashboard
-                    </a>
-                </li>
-                
-                <li class="nav-item">
-    <a class="nav-link" href="/admin/leagues">
-        <i class="bi bi-trophy-fill me-2"></i> Ligas
-    </a>
-</li>
-
-                <li class="nav-item">
-                    <a class="nav-link <?= $adminIsActive('/admin/rounds') ?>"
-                       href="/admin/rounds">
-                        Jornadas
-                    </a>
-                </li>
-
-                <li class="nav-item">
-                    <a class="nav-link <?= $adminIsActive('/admin/tickets') ?>"
-                       href="/admin/tickets">
-                        Tickets
-                    </a>
-                </li>
-
-                <li class="nav-item">
-                    <a class="nav-link <?= $adminIsActive('/admin/ranking') ?>"
-                       href="/admin/ranking">
-                        Ranking
-                    </a>
-                </li>
-
-                <li class="nav-item">
-                    <a class="nav-link <?= $adminIsActive('/admin/promotions') ?>"
-                       href="/admin/promotions">
-                        Promociones
-                    </a>
-                </li>
-                
-                <li class="nav-item">
-                    <a class="nav-link <?= $adminIsActive('/admin/countries') ?>"
-                       href="/admin/countries">
-                        <i class="bi bi-flag-fill me-2"></i> Países
-                    </a>
-                </li>
-
-                <li class="nav-item">
-                    <a class="nav-link <?= $adminIsActive('/admin/clubs') ?>"
-                       href="/admin/clubs">
-                        <i class="bi bi-shield-shaded me-2"></i> Clubes
-                    </a>
-                </li>
-                
-                
-                <li class="nav-item">
-    <a class="nav-link" href="/admin/regulations">
-        <i class="bi bi-file-text me-2"></i> Reglamento
-    </a>
-</li>
-
-            </ul>
-
-            <ul class="navbar-nav mb-2 mb-lg-0">
-                <li class="nav-item">
-                    <span class="navbar-text small text-muted me-3">
-                        Módulo administrador
-                    </span>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/admin/logout">
-                        Cerrar sesión
-                    </a>
-                </li>
-            </ul>
-        </div>
     </div>
-</nav>
+
+    <nav class="qv-admin-sidebar-nav">
+        <?php foreach ($menuItems as $item): ?>
+            <a
+                href="<?= htmlspecialchars($item['href'], ENT_QUOTES, 'UTF-8') ?>"
+                class="qv-admin-sidebar-link <?= htmlspecialchars($item['active'], ENT_QUOTES, 'UTF-8') ?>"
+                data-title="<?= htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8') ?>"
+            >
+                <span class="qv-admin-sidebar-icon">
+                    <i class="bi <?= htmlspecialchars($item['icon'], ENT_QUOTES, 'UTF-8') ?>"></i>
+                </span>
+
+                <span class="qv-admin-sidebar-text">
+                    <?= htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8') ?>
+                </span>
+            </a>
+        <?php endforeach; ?>
+    </nav>
+
+<div class="qv-admin-sidebar-footer">
+  <button
+    type="button"
+    class="qv-admin-theme-toggle"
+    id="qvAdminThemeToggle"
+    data-admin-theme-toggle
+    aria-label="Activar modo oscuro"
+    aria-pressed="false"
+>
+    <span class="qv-admin-theme-icon">
+        <i class="bi bi-moon-stars-fill" data-admin-theme-icon></i>
+    </span>
+
+    <span class="qv-admin-theme-text" data-admin-theme-text>
+        Modo oscuro
+    </span>
+
+    <span class="qv-admin-theme-switch" aria-hidden="true">
+        <span class="qv-admin-theme-switch-dot"></span>
+    </span>
+</button>
+
+    <div class="qv-admin-profile">
+        <span class="qv-admin-profile-avatar">
+            <i class="bi bi-person-fill"></i>
+        </span>
+
+        <span class="qv-admin-profile-copy">
+            <strong>Administrador</strong>
+            <small>Sesión activa</small>
+        </span>
+    </div>
+
+    <a href="/admin/logout" class="qv-admin-logout">
+        <i class="bi bi-box-arrow-right"></i>
+        <span>Cerrar sesión</span>
+    </a>
+</div>
+</aside>

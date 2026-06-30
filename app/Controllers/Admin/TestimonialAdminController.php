@@ -1,49 +1,79 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
-use App\Controllers\Admin\BaseAdminController;
 use App\Core\Database;
 use App\Core\Request;
 use App\Core\Response;
+use App\Core\Security;
 use PDO;
 use RuntimeException;
 use Throwable;
 
+/**
+ * Administración de testimonios.
+ *
+ * Tabla real utilizada:
+ * - testimonials.photo_path
+ * - testimonials.name
+ * - testimonials.country
+ * - testimonials.comment
+ * - testimonials.rating
+ * - testimonials.status
+ * - testimonials.display_order
+ */
 class TestimonialAdminController extends BaseAdminController
 {
     private PDO $pdo;
-    private array $columns = [];
 
+    /**
+     * Inicializa dependencias del controlador.
+     *
+     * @return void
+     */
     private function boot(): void
     {
         if (!isset($this->pdo)) {
             $this->pdo = Database::getConnection();
         }
-
-        if ($this->columns === []) {
-            $this->columns = $this->getTableColumns('testimonials');
-        }
     }
 
+    /**
+     * Lista testimonios con búsqueda simple.
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return void
+     */
     public function index(Request $request, Response $response): void
     {
         $this->requireAdmin();
         $this->boot();
 
-        $q = trim((string)($_GET['q'] ?? ''));
+        $q = Security::cleanText($_GET['q'] ?? '', 100);
 
         $where = [];
         $params = [];
 
         if ($q !== '') {
-            $where[] = '(name LIKE :q OR content LIKE :q)';
+            $where[] = '(name LIKE :q OR country LIKE :q OR comment LIKE :q)';
             $params[':q'] = '%' . $q . '%';
         }
 
         $sql = '
-            SELECT *
+            SELECT
+                id,
+                photo_path,
+                name,
+                country,
+                comment,
+                rating,
+                status,
+                display_order,
+                created_at,
+                updated_at
             FROM testimonials
         ';
 
@@ -51,21 +81,12 @@ class TestimonialAdminController extends BaseAdminController
             $sql .= ' WHERE ' . implode(' AND ', $where);
         }
 
-        if ($this->hasColumn('display_order')) {
-            $sql .= ' ORDER BY display_order ASC, id DESC';
-        } else {
-            $sql .= ' ORDER BY id DESC';
-        }
+        $sql .= ' ORDER BY display_order ASC, id DESC';
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
 
         $testimonials = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-        foreach ($testimonials as &$testimonial) {
-            $testimonial = $this->normalizeForView($testimonial);
-        }
-        unset($testimonial);
 
         $this->render('admin/testimonials/index', [
             'pageTitle' => 'Admin · Testimonios',
@@ -76,40 +97,81 @@ class TestimonialAdminController extends BaseAdminController
         ]);
     }
 
+    /**
+     * Muestra formulario de creación.
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return void
+     */
     public function create(Request $request, Response $response): void
     {
         $this->requireAdmin();
-        $this->boot();
 
         $this->render('admin/testimonials/form', [
             'pageTitle' => 'Crear testimonio',
             'testimonial' => null,
+            'error' => null,
         ]);
     }
 
+    /**
+     * Guarda un nuevo testimonio.
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return void
+     */
     public function store(Request $request, Response $response): void
     {
         $this->requireAdmin();
+        $this->requireValidCsrf();
         $this->boot();
 
         try {
             $data = $this->sanitizeData($_POST);
+            $photoPath = $this->uploadPhoto('photo_path');
 
-            $imagePath = $this->uploadImage('image_file')
-                ?: $this->uploadImage('photo_file')
-                ?: trim((string)($_POST['image_path'] ?? $_POST['photo'] ?? $_POST['avatar'] ?? ''));
-
-            if ($imagePath !== '') {
-                if ($this->hasColumn('image_path')) {
-                    $data['image_path'] = $imagePath;
-                } elseif ($this->hasColumn('photo')) {
-                    $data['photo'] = $imagePath;
-                } elseif ($this->hasColumn('avatar')) {
-                    $data['avatar'] = $imagePath;
-                }
+            if ($photoPath !== null) {
+                $data['photo_path'] = $photoPath;
             }
 
-            $this->insertTestimonial($data);
+            $stmt = $this->pdo->prepare('
+                INSERT INTO testimonials
+                (
+                    photo_path,
+                    name,
+                    country,
+                    comment,
+                    rating,
+                    status,
+                    display_order,
+                    created_at,
+                    updated_at
+                )
+                VALUES
+                (
+                    :photo_path,
+                    :name,
+                    :country,
+                    :comment,
+                    :rating,
+                    :status,
+                    :display_order,
+                    NOW(),
+                    NOW()
+                )
+            ');
+
+            $stmt->execute([
+                ':photo_path' => $data['photo_path'] ?? null,
+                ':name' => $data['name'],
+                ':country' => $data['country'],
+                ':comment' => $data['comment'],
+                ':rating' => $data['rating'],
+                ':status' => $data['status'],
+                ':display_order' => $data['display_order'],
+            ]);
 
             header('Location: /admin/testimonials');
             exit;
@@ -118,12 +180,19 @@ class TestimonialAdminController extends BaseAdminController
 
             $this->render('admin/testimonials/form', [
                 'pageTitle' => 'Crear testimonio',
-                'testimonial' => $this->normalizeForView($_POST),
+                'testimonial' => $_POST,
                 'error' => $e->getMessage(),
             ]);
         }
     }
 
+    /**
+     * Muestra formulario de edición.
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return void
+     */
     public function edit(Request $request, Response $response): void
     {
         $this->requireAdmin();
@@ -138,7 +207,7 @@ class TestimonialAdminController extends BaseAdminController
 
         $testimonial = $this->findById($id);
 
-        if (!$testimonial) {
+        if ($testimonial === null) {
             header('Location: /admin/testimonials');
             exit;
         }
@@ -146,12 +215,21 @@ class TestimonialAdminController extends BaseAdminController
         $this->render('admin/testimonials/form', [
             'pageTitle' => 'Editar testimonio',
             'testimonial' => $testimonial,
+            'error' => null,
         ]);
     }
 
+    /**
+     * Actualiza un testimonio.
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return void
+     */
     public function update(Request $request, Response $response): void
     {
         $this->requireAdmin();
+        $this->requireValidCsrf();
         $this->boot();
 
         $id = (int)($_POST['id'] ?? 0);
@@ -164,38 +242,49 @@ class TestimonialAdminController extends BaseAdminController
         try {
             $existing = $this->findById($id);
 
-            if (!$existing) {
+            if ($existing === null) {
                 throw new RuntimeException('El testimonio no existe.');
             }
 
             $data = $this->sanitizeData($_POST);
+            $photoPath = $this->uploadPhoto('photo_path');
 
-            $imagePath = $this->uploadImage('image_file')
-                ?: $this->uploadImage('photo_file')
-                ?: trim((string)($_POST['image_path'] ?? $_POST['photo'] ?? $_POST['avatar'] ?? ''));
-
-            if ($imagePath === '') {
-                $imagePath = (string)($existing['image_path'] ?? $existing['photo'] ?? $existing['avatar'] ?? '');
+            if ($photoPath === null) {
+                $photoPath = (string)($existing['photo_path'] ?? '');
             }
 
-            if ($imagePath !== '') {
-                if ($this->hasColumn('image_path')) {
-                    $data['image_path'] = $imagePath;
-                } elseif ($this->hasColumn('photo')) {
-                    $data['photo'] = $imagePath;
-                } elseif ($this->hasColumn('avatar')) {
-                    $data['avatar'] = $imagePath;
-                }
-            }
+            $stmt = $this->pdo->prepare('
+                UPDATE testimonials
+                SET
+                    photo_path = :photo_path,
+                    name = :name,
+                    country = :country,
+                    comment = :comment,
+                    rating = :rating,
+                    status = :status,
+                    display_order = :display_order,
+                    updated_at = NOW()
+                WHERE id = :id
+                LIMIT 1
+            ');
 
-            $this->updateTestimonial($id, $data);
+            $stmt->execute([
+                ':id' => $id,
+                ':photo_path' => $photoPath !== '' ? $photoPath : null,
+                ':name' => $data['name'],
+                ':country' => $data['country'],
+                ':comment' => $data['comment'],
+                ':rating' => $data['rating'],
+                ':status' => $data['status'],
+                ':display_order' => $data['display_order'],
+            ]);
 
             header('Location: /admin/testimonials');
             exit;
         } catch (Throwable $e) {
             error_log('Error actualizando testimonio: ' . $e->getMessage());
 
-            $testimonial = $this->normalizeForView($_POST);
+            $testimonial = $_POST;
             $testimonial['id'] = $id;
 
             $this->render('admin/testimonials/form', [
@@ -206,9 +295,17 @@ class TestimonialAdminController extends BaseAdminController
         }
     }
 
+    /**
+     * Elimina un testimonio.
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return void
+     */
     public function delete(Request $request, Response $response): void
     {
         $this->requireAdmin();
+        $this->requireValidCsrf();
         $this->boot();
 
         $id = (int)($_POST['id'] ?? 0);
@@ -218,6 +315,7 @@ class TestimonialAdminController extends BaseAdminController
                 $stmt = $this->pdo->prepare('
                     DELETE FROM testimonials
                     WHERE id = :id
+                    LIMIT 1
                 ');
 
                 $stmt->execute([
@@ -232,10 +330,26 @@ class TestimonialAdminController extends BaseAdminController
         exit;
     }
 
+    /**
+     * Busca un testimonio por ID.
+     *
+     * @param int $id
+     * @return array<string,mixed>|null
+     */
     private function findById(int $id): ?array
     {
         $stmt = $this->pdo->prepare('
-            SELECT *
+            SELECT
+                id,
+                photo_path,
+                name,
+                country,
+                comment,
+                rating,
+                status,
+                display_order,
+                created_at,
+                updated_at
             FROM testimonials
             WHERE id = :id
             LIMIT 1
@@ -247,28 +361,34 @@ class TestimonialAdminController extends BaseAdminController
 
         $testimonial = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$testimonial) {
-            return null;
-        }
-
-        return $this->normalizeForView($testimonial);
+        return $testimonial !== false ? $testimonial : null;
     }
 
+    /**
+     * Sanitiza y valida datos de formulario.
+     *
+     * @param array<string,mixed> $input
+     * @return array<string,mixed>
+     */
     private function sanitizeData(array $input): array
     {
-        $name = trim((string)($input['name'] ?? ''));
-        $role = trim((string)($input['role'] ?? $input['position'] ?? ''));
-        $content = trim((string)($input['content'] ?? $input['message'] ?? $input['testimonial'] ?? ''));
+        $name = Security::cleanText($input['name'] ?? '', 191);
+        $country = Security::cleanText($input['country'] ?? '', 100);
+        $comment = trim((string)($input['comment'] ?? ''));
         $rating = (int)($input['rating'] ?? 5);
-        $isActive = isset($input['is_active']) ? (int)$input['is_active'] : 1;
+        $status = strtoupper(Security::cleanText($input['status'] ?? 'ACTIVE', 20));
         $displayOrder = (int)($input['display_order'] ?? 0);
 
         if ($name === '') {
             throw new RuntimeException('El nombre es obligatorio.');
         }
 
-        if ($content === '') {
-            throw new RuntimeException('El contenido del testimonio es obligatorio.');
+        if ($comment === '') {
+            throw new RuntimeException('El comentario es obligatorio.');
+        }
+
+        if (mb_strlen($comment) > 1200) {
+            throw new RuntimeException('El comentario no debe superar los 1200 caracteres.');
         }
 
         if ($rating < 1) {
@@ -279,192 +399,81 @@ class TestimonialAdminController extends BaseAdminController
             $rating = 5;
         }
 
-        $data = [];
-
-        if ($this->hasColumn('name')) {
-            $data['name'] = $name;
+        if (!in_array($status, ['ACTIVE', 'INACTIVE'], true)) {
+            $status = 'ACTIVE';
         }
 
-        if ($this->hasColumn('role')) {
-            $data['role'] = $role !== '' ? $role : null;
-        } elseif ($this->hasColumn('position')) {
-            $data['position'] = $role !== '' ? $role : null;
+        if ($displayOrder < 0) {
+            $displayOrder = 0;
         }
 
-        if ($this->hasColumn('content')) {
-            $data['content'] = $content;
-        } elseif ($this->hasColumn('message')) {
-            $data['message'] = $content;
-        } elseif ($this->hasColumn('testimonial')) {
-            $data['testimonial'] = $content;
-        }
-
-        if ($this->hasColumn('rating')) {
-            $data['rating'] = $rating;
-        }
-
-        if ($this->hasColumn('is_active')) {
-            $data['is_active'] = $isActive === 1 ? 1 : 0;
-        }
-
-        if ($this->hasColumn('display_order')) {
-            $data['display_order'] = $displayOrder;
-        }
-
-        return $data;
+        return [
+            'name' => $name,
+            'country' => $country !== '' ? $country : null,
+            'comment' => $comment,
+            'rating' => $rating,
+            'status' => $status,
+            'display_order' => $displayOrder,
+        ];
     }
 
-    private function insertTestimonial(array $data): void
-    {
-        if ($this->hasColumn('created_at')) {
-            $data['created_at'] = date('Y-m-d H:i:s');
-        }
-
-        if ($this->hasColumn('updated_at')) {
-            $data['updated_at'] = date('Y-m-d H:i:s');
-        }
-
-        $data = $this->filterDataByColumns($data);
-
-        $columns = array_keys($data);
-
-        if ($columns === []) {
-            throw new RuntimeException('No hay datos válidos para guardar.');
-        }
-
-        $placeholders = array_map(fn(string $column): string => ':' . $column, $columns);
-
-        $sql = '
-            INSERT INTO testimonials (' . implode(', ', $columns) . ')
-            VALUES (' . implode(', ', $placeholders) . ')
-        ';
-
-        $stmt = $this->pdo->prepare($sql);
-
-        foreach ($data as $column => $value) {
-            $stmt->bindValue(':' . $column, $value);
-        }
-
-        $stmt->execute();
-    }
-
-    private function updateTestimonial(int $id, array $data): void
-    {
-        if ($this->hasColumn('updated_at')) {
-            $data['updated_at'] = date('Y-m-d H:i:s');
-        }
-
-        $data = $this->filterDataByColumns($data);
-
-        $sets = [];
-
-        foreach (array_keys($data) as $column) {
-            $sets[] = $column . ' = :' . $column;
-        }
-
-        if ($sets === []) {
-            return;
-        }
-
-        $sql = '
-            UPDATE testimonials
-            SET ' . implode(', ', $sets) . '
-            WHERE id = :id
-        ';
-
-        $stmt = $this->pdo->prepare($sql);
-
-        foreach ($data as $column => $value) {
-            $stmt->bindValue(':' . $column, $value);
-        }
-
-        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
-        $stmt->execute();
-    }
-
-    private function normalizeForView(array $testimonial): array
-    {
-        $name = (string)($testimonial['name'] ?? '');
-        $role = (string)($testimonial['role'] ?? $testimonial['position'] ?? '');
-        $content = (string)($testimonial['content'] ?? $testimonial['message'] ?? $testimonial['testimonial'] ?? '');
-        $image = (string)($testimonial['image_path'] ?? $testimonial['photo'] ?? $testimonial['avatar'] ?? '');
-
-        $testimonial['name'] = $name;
-        $testimonial['role'] = $role;
-        $testimonial['position'] = $role;
-
-        $testimonial['content'] = $content;
-        $testimonial['message'] = $content;
-        $testimonial['testimonial'] = $content;
-
-        $testimonial['image_path'] = $image;
-        $testimonial['photo'] = $image;
-        $testimonial['avatar'] = $image;
-
-        $testimonial['rating'] = isset($testimonial['rating']) ? (int)$testimonial['rating'] : 5;
-        $testimonial['is_active'] = isset($testimonial['is_active']) ? (int)$testimonial['is_active'] : 1;
-        $testimonial['display_order'] = isset($testimonial['display_order']) ? (int)$testimonial['display_order'] : 0;
-
-        return $testimonial;
-    }
-
-    private function getTableColumns(string $table): array
-    {
-        $stmt = $this->pdo->query('SHOW COLUMNS FROM ' . $table);
-
-        $columns = [];
-
-        foreach (($stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : []) as $column) {
-            $columns[] = $column['Field'];
-        }
-
-        return $columns;
-    }
-
-    private function hasColumn(string $column): bool
-    {
-        return in_array($column, $this->columns, true);
-    }
-
-    private function filterDataByColumns(array $data): array
-    {
-        return array_filter(
-            $data,
-            fn(string $column): bool => $this->hasColumn($column),
-            ARRAY_FILTER_USE_KEY
-        );
-    }
-
-    private function uploadImage(string $inputName): ?string
+    /**
+     * Sube foto de testimonio de forma segura.
+     *
+     * Solo permite imágenes reales JPEG, PNG o WEBP.
+     *
+     * @param string $inputName Nombre del input file.
+     * @return string|null Ruta pública de la imagen.
+     */
+    private function uploadPhoto(string $inputName): ?string
     {
         if (
             !isset($_FILES[$inputName]) ||
             !isset($_FILES[$inputName]['error']) ||
-            $_FILES[$inputName]['error'] !== UPLOAD_ERR_OK
+            $_FILES[$inputName]['error'] === UPLOAD_ERR_NO_FILE
         ) {
             return null;
         }
 
+        if ($_FILES[$inputName]['error'] !== UPLOAD_ERR_OK) {
+            throw new RuntimeException('No se pudo subir la foto.');
+        }
+
+        $tmpName = (string)($_FILES[$inputName]['tmp_name'] ?? '');
+        $size = (int)($_FILES[$inputName]['size'] ?? 0);
+
+        if ($tmpName === '' || !is_uploaded_file($tmpName)) {
+            throw new RuntimeException('Archivo de imagen inválido.');
+        }
+
+        if ($size <= 0 || $size > 2 * 1024 * 1024) {
+            throw new RuntimeException('La foto no debe superar los 2 MB.');
+        }
+
+        $mimeType = mime_content_type($tmpName);
+
+        $allowedMimeTypes = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+        ];
+
+        if (!isset($allowedMimeTypes[$mimeType])) {
+            throw new RuntimeException('Formato no permitido. Usa JPG, PNG o WEBP.');
+        }
+
         $uploadDir = dirname(__DIR__, 3) . '/assets/uploads/testimonials/';
 
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
+        if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
+            throw new RuntimeException('No se pudo crear el directorio de testimonios.');
         }
 
-        $originalName = basename((string)$_FILES[$inputName]['name']);
-        $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-
-        if (!in_array($extension, ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'], true)) {
-            throw new RuntimeException('Formato de imagen no permitido.');
-        }
-
-        $cleanName = preg_replace('/[^a-zA-Z0-9._-]/', '', $originalName) ?: 'testimonial.' . $extension;
-        $fileName = 'testimonial_' . time() . '_' . bin2hex(random_bytes(4)) . '_' . $cleanName;
-
+        $extension = $allowedMimeTypes[$mimeType];
+        $fileName = 'testimonial_' . date('Ymd_His') . '_' . bin2hex(random_bytes(8)) . '.' . $extension;
         $targetPath = $uploadDir . $fileName;
 
-        if (!move_uploaded_file((string)$_FILES[$inputName]['tmp_name'], $targetPath)) {
-            throw new RuntimeException('No se pudo subir la imagen.');
+        if (!move_uploaded_file($tmpName, $targetPath)) {
+            throw new RuntimeException('No se pudo guardar la foto.');
         }
 
         return '/assets/uploads/testimonials/' . $fileName;
