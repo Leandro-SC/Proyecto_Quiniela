@@ -40,8 +40,14 @@ $coachCssVersion = is_file($coachCssPath) ? filemtime($coachCssPath) : time();
 $adminModernCssPath = dirname(__DIR__, 3) . '/assets/css/admin-modern.css';
 $adminModernCssVersion = is_file($adminModernCssPath) ? filemtime($adminModernCssPath) : time();
 
+$publicModernCssPath = dirname(__DIR__, 3) . '/assets/css/public-modern.css';
+$publicModernCssVersion = is_file($publicModernCssPath) ? filemtime($publicModernCssPath) : time();
+
 $appJsPath = dirname(__DIR__, 3) . '/assets/js/app.js';
 $appJsVersion = is_file($appJsPath) ? filemtime($appJsPath) : time();
+
+$publicModernJsPath = dirname(__DIR__, 3) . '/assets/js/public-modern.js';
+$publicModernJsVersion = is_file($publicModernJsPath) ? filemtime($publicModernJsPath) : time();
 
 $coachJsPath = dirname(__DIR__, 3) . '/assets/js/coach.js';
 $coachJsVersion = is_file($coachJsPath) ? filemtime($coachJsPath) : time();
@@ -97,29 +103,29 @@ $mainContainerClass = $isAdminArea ? 'container-fluid qv-admin-content-wrap' : '
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-    <link rel="stylesheet" href="/assets/css/app.css?v=<?= $appCssVersion ?>">
-
-    <?php if (is_file($coachCssPath)): ?>
-        <link rel="stylesheet" href="/assets/css/coach.css?v=<?= $coachCssVersion ?>">
+    <?php if ($isAdminArea): ?>
+        <link rel="stylesheet" href="/assets/css/app.css?v=<?= $appCssVersion ?>">
+    <?php else: ?>
+        <link rel="stylesheet" href="/assets/css/public-modern.css?v=<?= $publicModernCssVersion ?>">
     <?php endif; ?>
 
-  <?php if ($isAdminArea): ?>
-    <script>
-        (function () {
-            try {
-                var savedTheme = localStorage.getItem('qv_admin_theme');
+    <?php if ($isAdminArea): ?>
+        <script>
+            (function() {
+                try {
+                    var savedTheme = localStorage.getItem('qv_admin_theme');
 
-                if (savedTheme === 'dark') {
-                    document.documentElement.classList.add('qv-admin-theme-dark');
+                    if (savedTheme === 'dark') {
+                        document.documentElement.classList.add('qv-admin-theme-dark');
+                    }
+                } catch (error) {
+                    // Si localStorage no está disponible, el admin carga en modo claro.
                 }
-            } catch (error) {
-                // Si localStorage no está disponible, el admin carga en modo claro.
-            }
-        })();
-    </script>
+            })();
+        </script>
 
-    <link rel="stylesheet" href="/assets/css/admin-modern.css?v=<?= $adminModernCssVersion ?>">
-<?php endif; ?>
+        <link rel="stylesheet" href="/assets/css/admin-modern.css?v=<?= $adminModernCssVersion ?>">
+    <?php endif; ?>
 
     <script type="application/ld+json">
         {
@@ -141,8 +147,7 @@ $mainContainerClass = $isAdminArea ? 'container-fluid qv-admin-content-wrap' : '
                     <img
                         src="/assets/img/logo_quiniela.png"
                         alt="Villa Quiniela"
-                        class="qv-public-logo me-2"
-                    >
+                        class="qv-public-logo me-2">
                     <span class="d-none d-sm-inline qv-public-brand-name">
                         Quinielas Villas
                     </span>
@@ -155,8 +160,7 @@ $mainContainerClass = $isAdminArea ? 'container-fluid qv-admin-content-wrap' : '
                     data-bs-target="#mainNavbar"
                     aria-controls="mainNavbar"
                     aria-expanded="false"
-                    aria-label="Abrir menú de navegación"
-                >
+                    aria-label="Abrir menú de navegación">
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
@@ -212,8 +216,7 @@ $mainContainerClass = $isAdminArea ? 'container-fluid qv-admin-content-wrap' : '
                 <button
                     type="button"
                     class="btn btn-sm qv-geo-change-btn"
-                    data-geo-action="open-modal"
-                >
+                    data-geo-action="open-modal">
                     Cambiar ubicación
                 </button>
             </div>
@@ -247,8 +250,7 @@ $mainContainerClass = $isAdminArea ? 'container-fluid qv-admin-content-wrap' : '
             class="btn-whatsapp-float"
             target="_blank"
             rel="noopener"
-            aria-label="Chatea con nosotros por WhatsApp"
-        >
+            aria-label="Chatea con nosotros por WhatsApp">
             <i class="bi bi-whatsapp"></i>
         </a>
     <?php endif; ?>
@@ -258,13 +260,18 @@ $mainContainerClass = $isAdminArea ? 'container-fluid qv-admin-content-wrap' : '
 
     <script src="/assets/js/app.js?v=<?= $appJsVersion ?>"></script>
 
-    <?php if (is_file($coachJsPath)): ?>
+    <?php if (!$isAdminArea && is_file($publicModernJsPath)): ?>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+        <script src="/assets/js/public-modern.js?v=<?= $publicModernJsVersion ?>"></script>
+    <?php endif; ?>
+
+    <?php if ($isAdminArea && is_file($coachJsPath)): ?>
         <script src="/assets/js/coach.js?v=<?= $coachJsVersion ?>"></script>
     <?php endif; ?>
 
-<?php if ($isAdminArea): ?>
-    <script src="/assets/js/admin-modern.js?v=<?= $adminModernJsVersion ?>"></script>
-<?php endif; ?>
+    <?php if ($isAdminArea): ?>
+        <script src="/assets/js/admin-modern.js?v=<?= $adminModernJsVersion ?>"></script>
+    <?php endif; ?>
 
 </body>
 
