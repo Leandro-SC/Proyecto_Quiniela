@@ -1705,3 +1705,285 @@ body:not(.qv-admin-body) .ch-pick-cell {
     width: 42px !important;
     min-width: 42px !important;
 }
+
+/* =====================================================
+   HOME CHECKOUT / RESUMEN · MOBILE APP STYLE
+   ===================================================== */
+
+body.qv-public-body #player-name,
+body.qv-public-body #player-phone,
+body:not(.qv-admin-body) #player-name,
+body:not(.qv-admin-body) #player-phone {
+    width: 100%;
+    min-height: 58px;
+    border-radius: 18px !important;
+    border: 1px solid rgba(148, 163, 184, 0.28) !important;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%) !important;
+    color: #0f172a !important;
+    font-size: 0.98rem;
+    font-weight: 700;
+    padding: 0 1rem !important;
+    box-shadow:
+        0 12px 26px rgba(15, 23, 42, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+body.qv-public-body #player-name::placeholder,
+body.qv-public-body #player-phone::placeholder,
+body:not(.qv-admin-body) #player-name::placeholder,
+body:not(.qv-admin-body) #player-phone::placeholder {
+    color: #64748b;
+    font-weight: 600;
+}
+
+body.qv-public-body #player-name:focus,
+body.qv-public-body #player-phone:focus,
+body:not(.qv-admin-body) #player-name:focus,
+body:not(.qv-admin-body) #player-phone:focus {
+    outline: none !important;
+    border-color: rgba(37, 99, 235, 0.38) !important;
+    box-shadow:
+        0 0 0 4px rgba(37, 99, 235, 0.10),
+        0 16px 30px rgba(15, 23, 42, 0.08);
+    transform: translateY(-1px);
+}
+
+/* CTA agregar quiniela */
+body.qv-public-body #btn-add-ticket,
+body:not(.qv-admin-body) #btn-add-ticket {
+    min-height: 58px;
+    padding: 0.95rem 1.6rem !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: linear-gradient(135deg, #2563eb 0%, #0f4fd6 50%, #123ea5 100%) !important;
+    color: #ffffff !important;
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: 0.01em;
+    box-shadow:
+        0 18px 34px rgba(37, 99, 235, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+
+body.qv-public-body #btn-add-ticket:hover,
+body.qv-public-body #btn-add-ticket:focus,
+body:not(.qv-admin-body) #btn-add-ticket:hover,
+body:not(.qv-admin-body) #btn-add-ticket:focus {
+    transform: translateY(-2px) scale(1.01);
+    box-shadow:
+        0 22px 42px rgba(37, 99, 235, 0.30),
+        0 0 0 5px rgba(37, 99, 235, 0.10);
+    filter: saturate(1.08);
+}
+
+body.qv-public-body #btn-add-ticket:active,
+body:not(.qv-admin-body) #btn-add-ticket:active {
+    transform: scale(0.98);
+}
+
+/* CTA WhatsApp */
+body.qv-public-body #btn-send-whatsapp,
+body:not(.qv-admin-body) #btn-send-whatsapp {
+    min-height: 58px;
+    padding: 1rem 1.5rem !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: linear-gradient(135deg, #22c55e 0%, #23b86d 45%, #14b8a6 100%) !important;
+    color: #ffffff !important;
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: 0.01em;
+    box-shadow:
+        0 18px 34px rgba(20, 184, 166, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+
+body.qv-public-body #btn-send-whatsapp:hover,
+body.qv-public-body #btn-send-whatsapp:focus,
+body:not(.qv-admin-body) #btn-send-whatsapp:hover,
+body:not(.qv-admin-body) #btn-send-whatsapp:focus {
+    transform: translateY(-2px) scale(1.01);
+    box-shadow:
+        0 22px 42px rgba(20, 184, 166, 0.24),
+        0 0 0 5px rgba(16, 185, 129, 0.10);
+    filter: saturate(1.05);
+}
+
+body.qv-public-body #btn-send-whatsapp:active,
+body:not(.qv-admin-body) #btn-send-whatsapp:active {
+    transform: scale(0.98);
+}
+
+/* Nota inferior del botón agregar */
+body.qv-public-body .text-muted,
+body:not(.qv-admin-body) .text-muted {
+    color: #64748b !important;
+    font-size: 0.84rem;
+    font-weight: 600;
+}
+
+/* Card moderna del resumen */
+body.qv-public-body .table-responsive:has(#tickets-summary-body),
+body:not(.qv-admin-body) .table-responsive:has(#tickets-summary-body) {
+    border-radius: 28px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    box-shadow:
+        0 22px 48px rgba(15, 23, 42, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+/* Tabla resumen */
+body.qv-public-body table:has(#tickets-summary-body),
+body:not(.qv-admin-body) table:has(#tickets-summary-body) {
+    margin-bottom: 0 !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    background: transparent !important;
+}
+
+body.qv-public-body table:has(#tickets-summary-body) thead th,
+body:not(.qv-admin-body) table:has(#tickets-summary-body) thead th {
+    background: linear-gradient(135deg, #111827 0%, #1f2937 100%) !important;
+    color: #ffffff !important;
+    border: 0 !important;
+    font-size: 0.88rem;
+    font-weight: 900;
+    letter-spacing: 0.01em;
+    padding: 1rem 0.9rem !important;
+    vertical-align: middle;
+}
+
+body.qv-public-body table:has(#tickets-summary-body) tbody td,
+body:not(.qv-admin-body) table:has(#tickets-summary-body) tbody td {
+    border-color: rgba(226, 232, 240, 0.9) !important;
+    background: transparent !important;
+    color: #0f172a !important;
+    font-size: 0.92rem;
+    font-weight: 600;
+    padding: 1rem 0.9rem !important;
+    vertical-align: middle;
+}
+
+body.qv-public-body table:has(#tickets-summary-body) tbody tr:hover td,
+body:not(.qv-admin-body) table:has(#tickets-summary-body) tbody tr:hover td {
+    background: rgba(37, 99, 235, 0.03) !important;
+}
+
+/* Estado vacío */
+body.qv-public-body #tickets-summary-body tr td[colspan],
+body:not(.qv-admin-body) #tickets-summary-body tr td[colspan] {
+    text-align: center !important;
+    padding: 1.8rem 1rem !important;
+    color: #64748b !important;
+    font-size: 0.98rem;
+    font-weight: 600;
+}
+
+/* Total bar si ya está debajo de la tabla */
+body.qv-public-body .table-responsive:has(#tickets-summary-body) + .bg-danger,
+body:not(.qv-admin-body) .table-responsive:has(#tickets-summary-body) + .bg-danger,
+body.qv-public-body .table-responsive:has(#tickets-summary-body) + .summary-total,
+body:not(.qv-admin-body) .table-responsive:has(#tickets-summary-body) + .summary-total {
+    border-radius: 0 0 28px 28px !important;
+    background: linear-gradient(135deg, #ef233c 0%, #dc2626 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 14px 28px rgba(220, 38, 38, 0.18);
+}
+
+/* Chips o badge del contador, si existe */
+body.qv-public-body .badge,
+body:not(.qv-admin-body) .badge {
+    border-radius: 999px;
+    font-weight: 800;
+}
+
+/* Sección visualmente más limpia */
+body.qv-public-body hr,
+body:not(.qv-admin-body) hr {
+    border-color: rgba(148, 163, 184, 0.18);
+}
+
+/* APP FEEL MOBILE */
+@media (max-width: 991.98px) {
+    body.qv-public-body #btn-add-ticket,
+    body.qv-public-body #btn-send-whatsapp,
+    body:not(.qv-admin-body) #btn-add-ticket,
+    body:not(.qv-admin-body) #btn-send-whatsapp {
+        width: 100% !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+
+    body.qv-public-body .table-responsive:has(#tickets-summary-body),
+    body:not(.qv-admin-body) .table-responsive:has(#tickets-summary-body) {
+        border-radius: 22px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    body.qv-public-body #player-name,
+    body.qv-public-body #player-phone,
+    body:not(.qv-admin-body) #player-name,
+    body:not(.qv-admin-body) #player-phone {
+        min-height: 54px;
+        font-size: 0.95rem;
+        border-radius: 16px !important;
+        padding: 0 0.95rem !important;
+    }
+
+    body.qv-public-body #btn-add-ticket,
+    body.qv-public-body #btn-send-whatsapp,
+    body:not(.qv-admin-body) #btn-add-ticket,
+    body:not(.qv-admin-body) #btn-send-whatsapp {
+        min-height: 54px;
+        font-size: 0.95rem;
+        border-radius: 18px !important;
+    }
+
+    body.qv-public-body table:has(#tickets-summary-body) thead th,
+    body:not(.qv-admin-body) table:has(#tickets-summary-body) thead th {
+        font-size: 0.78rem;
+        padding: 0.85rem 0.55rem !important;
+        white-space: nowrap;
+    }
+
+    body.qv-public-body table:has(#tickets-summary-body) tbody td,
+    body:not(.qv-admin-body) table:has(#tickets-summary-body) tbody td {
+        font-size: 0.82rem;
+        padding: 0.8rem 0.55rem !important;
+    }
+
+    body.qv-public-body #tickets-summary-body tr td[colspan],
+    body:not(.qv-admin-body) #tickets-summary-body tr td[colspan] {
+        font-size: 0.9rem;
+        padding: 1.35rem 0.8rem !important;
+    }
+}
+
+@media (max-width: 575.98px) {
+    body.qv-public-body .table-responsive:has(#tickets-summary-body),
+    body:not(.qv-admin-body) .table-responsive:has(#tickets-summary-body) {
+        border-radius: 18px;
+        box-shadow:
+            0 14px 30px rgba(15, 23, 42, 0.08),
+            inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    body.qv-public-body table:has(#tickets-summary-body) thead th,
+    body:not(.qv-admin-body) table:has(#tickets-summary-body) thead th {
+        font-size: 0.72rem;
+        padding: 0.72rem 0.45rem !important;
+    }
+
+    body.qv-public-body table:has(#tickets-summary-body) tbody td,
+    body:not(.qv-admin-body) table:has(#tickets-summary-body) tbody td {
+        font-size: 0.76rem;
+        padding: 0.72rem 0.45rem !important;
+    }
+}
