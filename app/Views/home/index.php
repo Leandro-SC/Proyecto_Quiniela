@@ -422,139 +422,150 @@ $hasMatches = $hasCurrentRound && !empty($matches);
 
     <?php if ($hasMatches): ?>
         <div class="ch-table-container bg-white shadow-sm position-relative">
-            <div class="table-responsive ch-table-scroll-wrap">
-                <table class="table table-bordered mb-0 ch-table">
-                    <thead class="ch-thead text-white text-center text-uppercase">
-                        <tr>
-                            <th class="ch-pick-head">L</th>
-                            <th>Local</th>
-                            <th class="ch-pick-head">E</th>
-                            <th>Visita</th>
-                            <th class="ch-pick-head">V</th>
-                            <th class="col-info-header">Info</th>
-                        </tr>
-                    </thead>
-
-                    <tbody id="matches-table-body" class="text-dark">
-                        <?php foreach ($matches as $match): ?>
-                            <?php
-                            $matchStatus = (string)($match['status'] ?? 'SCHEDULED');
-                            $isDisabled = $matchStatus !== 'SCHEDULED';
-
-                            try {
-                                $kickoffDate = new DateTime((string)($match['kickoff_at'] ?? 'now'));
-                            } catch (Throwable) {
-                                $kickoffDate = new DateTime();
-                            }
-
-                            $dateStr = $kickoffDate->format('d/m/Y');
-                            $timeStr = $kickoffDate->format('H:i');
-                            $leagueAbbr = $getLeagueAbbr($match['league_name'] ?? 'MX');
-
-                            $homeTeamName = (string)($match['home_team_name'] ?? '');
-                            $awayTeamName = (string)($match['away_team_name'] ?? '');
-                            $homeLogo = (string)($match['home_team_logo'] ?? '');
-                            $awayLogo = (string)($match['away_team_logo'] ?? '');
-                            ?>
-
-                            <tr data-match-id="<?= (int)($match['id'] ?? 0) ?>">
-                                <td class="text-center p-0 align-middle ch-pick-cell">
-                                    <button
-                                        type="button"
-                                        class="btn btn-ch-pick btn-choice w-100 h-100 rounded-0"
-                                        data-choice="L"
-                                        aria-label="Gana local"
-                                        <?= $isDisabled ? 'disabled' : '' ?>>
-                                        L
-                                    </button>
-                                </td>
-
-                                <td class="align-middle text-start ps-2 ps-md-3 fw-bold text-uppercase ch-team-cell ch-team-cell--home">
-                                    <div class="d-flex align-items-center ch-team-box ch-team-box--home">
-                                        <?php if ($homeLogo !== ''): ?>
-                                            <img
-                                                src="<?= $e($homeLogo) ?>"
-                                                class="ch-team-logo me-2"
-                                                width="30"
-                                                height="30"
-                                                loading="lazy"
-                                                alt="<?= $e($homeTeamName) ?>"
-                                                onerror="this.style.display='none'">
-                                        <?php endif; ?>
-
-                                        <span><?= $e($homeTeamName) ?></span>
-                                    </div>
-                                </td>
-
-                                <td class="text-center p-0 align-middle ch-pick-cell">
-                                    <button
-                                        type="button"
-                                        class="btn btn-ch-pick btn-choice w-100 h-100 rounded-0"
-                                        data-choice="E"
-                                        aria-label="Empate"
-                                        <?= $isDisabled ? 'disabled' : '' ?>>
-                                        E
-                                    </button>
-                                </td>
-
-                                <td class="align-middle text-end pe-2 pe-md-3 fw-bold text-uppercase ch-team-cell ch-team-cell--away">
-                                    <div class="d-flex align-items-center justify-content-end ch-team-box ch-team-box--away">
-                                        <span><?= $e($awayTeamName) ?></span>
-
-                                        <?php if ($awayLogo !== ''): ?>
-                                            <img
-                                                src="<?= $e($awayLogo) ?>"
-                                                class="ch-team-logo ms-2"
-                                                width="30"
-                                                height="30"
-                                                loading="lazy"
-                                                alt="<?= $e($awayTeamName) ?>"
-                                                onerror="this.style.display='none'">
-                                        <?php endif; ?>
-                                    </div>
-                                </td>
-
-                                <td class="text-center p-0 align-middle ch-pick-cell">
-                                    <button
-                                        type="button"
-                                        class="btn btn-ch-pick btn-choice w-100 h-100 rounded-0"
-                                        data-choice="V"
-                                        aria-label="Gana visita"
-                                        <?= $isDisabled ? 'disabled' : '' ?>>
-                                        V
-                                    </button>
-                                </td>
-
-                                <td class="align-middle text-center p-1 cell-match-info">
-                                    <div class="d-flex flex-column align-items-center justify-content-center cell-match-info-inner">
-                                        <span class="match-date"><?= $e($dateStr) ?></span>
-                                        <span class="match-time"><?= $e($timeStr) ?></span>
-                                        <span class="badge bg-light text-secondary border mt-1 match-league-badge">
-                                            <?= $e($leagueAbbr) ?>
-                                        </span>
-                                    </div>
-                                </td>
+            <div class="ch-table-container bg-white shadow-sm position-relative">
+                <div class="table-responsive ch-table-scroll-wrap">
+                    <table class="table table-bordered mb-0 ch-table">
+                        <thead class="ch-thead text-white text-center text-uppercase">
+                            <tr>
+                                <th class="ch-pick-head">L</th>
+                                <th>Local</th>
+                                <th class="ch-pick-head">E</th>
+                                <th>Visita</th>
+                                <th class="ch-pick-head">V</th>
+                                <th class="col-info-header">Info</th>
                             </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+                        </thead>
+
+                        <tbody id="matches-table-body" class="text-dark">
+                            <?php foreach ($matches as $match): ?>
+                                <?php
+                                $matchStatus = (string)($match['status'] ?? 'SCHEDULED');
+                                $isDisabled = $matchStatus !== 'SCHEDULED';
+
+                                try {
+                                    $kickoffDate = new DateTime((string)($match['kickoff_at'] ?? 'now'));
+                                } catch (Throwable) {
+                                    $kickoffDate = new DateTime();
+                                }
+
+                                $dateStr = $kickoffDate->format('d/m/Y');
+                                $timeStr = $kickoffDate->format('H:i');
+                                $leagueAbbr = $getLeagueAbbr($match['league_name'] ?? 'MX');
+
+                                $homeTeamName = (string)($match['home_team_name'] ?? '');
+                                $awayTeamName = (string)($match['away_team_name'] ?? '');
+                                $homeLogo = (string)($match['home_team_logo'] ?? '');
+                                $awayLogo = (string)($match['away_team_logo'] ?? '');
+                                ?>
+
+                                <tr data-match-id="<?= (int)($match['id'] ?? 0) ?>">
+                                    <td class="text-center p-0 align-middle ch-pick-cell">
+                                        <button
+                                            type="button"
+                                            class="btn btn-ch-pick btn-choice w-100 h-100 rounded-0"
+                                            data-choice="L"
+                                            aria-label="Gana local"
+                                            <?= $isDisabled ? 'disabled' : '' ?>>
+                                            L
+                                        </button>
+                                    </td>
+
+                                    <td class="align-middle text-start ps-2 ps-md-3 fw-bold text-uppercase ch-team-cell ch-team-cell--home">
+                                        <div class="d-flex align-items-center ch-team-box ch-team-box--home">
+                                            <?php if ($homeLogo !== ''): ?>
+                                                <img
+                                                    src="<?= $e($homeLogo) ?>"
+                                                    class="ch-team-logo me-2"
+                                                    width="30"
+                                                    height="30"
+                                                    loading="lazy"
+                                                    alt="<?= $e($homeTeamName) ?>"
+                                                    onerror="this.style.display='none'">
+                                            <?php endif; ?>
+
+                                            <span><?= $e($homeTeamName) ?></span>
+                                        </div>
+                                    </td>
+
+                                    <td class="text-center p-0 align-middle ch-pick-cell">
+                                        <button
+                                            type="button"
+                                            class="btn btn-ch-pick btn-choice w-100 h-100 rounded-0"
+                                            data-choice="E"
+                                            aria-label="Empate"
+                                            <?= $isDisabled ? 'disabled' : '' ?>>
+                                            E
+                                        </button>
+                                    </td>
+
+                                    <td class="align-middle text-end pe-2 pe-md-3 fw-bold text-uppercase ch-team-cell ch-team-cell--away">
+                                        <div class="d-flex align-items-center justify-content-end ch-team-box ch-team-box--away">
+                                            <span><?= $e($awayTeamName) ?></span>
+
+                                            <?php if ($awayLogo !== ''): ?>
+                                                <img
+                                                    src="<?= $e($awayLogo) ?>"
+                                                    class="ch-team-logo ms-2"
+                                                    width="30"
+                                                    height="30"
+                                                    loading="lazy"
+                                                    alt="<?= $e($awayTeamName) ?>"
+                                                    onerror="this.style.display='none'">
+                                            <?php endif; ?>
+                                        </div>
+                                    </td>
+
+                                    <td class="text-center p-0 align-middle ch-pick-cell">
+                                        <button
+                                            type="button"
+                                            class="btn btn-ch-pick btn-choice w-100 h-100 rounded-0"
+                                            data-choice="V"
+                                            aria-label="Gana visita"
+                                            <?= $isDisabled ? 'disabled' : '' ?>>
+                                            V
+                                        </button>
+                                    </td>
+
+                                    <td class="align-middle text-center p-1 cell-match-info">
+                                        <div class="cell-match-info-inner">
+                                            <span class="match-date" title="Fecha del partido">
+                                                <i class="bi bi-calendar-event"></i>
+                                                <span><?= $e($dateStr) ?></span>
+                                            </span>
+
+                                            <span class="match-time" title="Hora del partido">
+                                                <i class="bi bi-clock-history"></i>
+                                                <span><?= $e($timeStr) ?></span>
+                                            </span>
+
+                                            <span class="badge bg-light text-secondary border match-league-badge" title="Liga">
+                                                <?= $e($leagueAbbr) ?>
+                                            </span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="ch-info-bar d-flex flex-wrap text-white fw-bold text-uppercase shadow-sm">
+                <div class="flex-fill bg-dark py-3 px-3 border-end border-light text-center text-md-start">
+                    Costo:
+                    <span class="text-warning ms-1" id="ticket-cost-label">
+                        <?= $e($ticketCostLabel) ?>
+                    </span>
+                </div>
+
+                <div class="flex-fill bg-danger py-3 px-3 text-center text-md-end">
+                    Cierre:
+                    <span class="ms-1 text-white">
+                        Revisa fecha y hora arriba
+                    </span>
+                </div>
             </div>
         </div>
-
-        <div class="ch-info-bar d-flex flex-wrap text-white fw-bold text-uppercase shadow-sm">
-            <div class="flex-fill bg-dark py-3 px-3 border-end border-light text-center text-md-start">
-                Costo:
-                <span class="text-warning ms-1" id="ticket-cost-label">
-                    <?= $e($ticketCostLabel) ?>
-                </span>
-            </div>
-
-            <div class="flex-fill bg-danger py-3 px-3 text-center text-md-end">
-                Cierre:
-                <span class="ms-1 text-white">
-                    Ver detalle arriba
-                </span>
-            </div>
         </div>
 
         <div class="ch-form-area py-5 px-3">
@@ -614,31 +625,50 @@ $hasMatches = $hasCurrentRound && !empty($matches);
 
                 <div class="mt-5 ch-ticket-summary-wrap">
                     <div class="card border-0 shadow-lg overflow-hidden ch-ticket-summary-card">
-                        <div class="card-header bg-white border-bottom-0 text-center py-3">
-                            <h5 class="mb-0 fw-bold text-dark text-uppercase">
-                                Tus quinielas
-                            </h5>
-                        </div>
+                        <div class="card-header bg-white border-bottom-0 text-center py-3 qv-summary-header">
+                            <div class="qv-summary-header__title">
+                                <h5 class="mb-0 fw-bold text-dark text-uppercase">
+                                    Tus quinielas
+                                </h5>
 
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-striped mb-0 text-center align-middle ch-summary-table">
-                                    <thead class="table-dark small">
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Nombre</th>
-                                            <th>Celular</th>
-                                            <th>Pronósticos</th>
-                                            <th class="text-end">Valor</th>
-                                        </tr>
-                                    </thead>
-
-                                    <tbody id="tickets-summary-body"></tbody>
-                                </table>
+                                <small>
+                                    Revisa el detalle antes de enviarlo
+                                </small>
                             </div>
 
-                            <div id="empty-state-msg" class="text-center py-4 text-muted small bg-light ch-empty-state" style="display:none;">
-                                Aún no has agregado ninguna quiniela.
+                            <button
+                                type="button"
+                                id="qv-toggle-summary"
+                                class="qv-summary-toggle"
+                                aria-expanded="true"
+                                aria-controls="qv-summary-content">
+                                <span data-summary-toggle-label>Ocultar</span>
+                                <i class="bi bi-chevron-up" data-summary-toggle-icon></i>
+                            </button>
+                        </div>
+
+                        <div id="qv-summary-content" class="card-body p-0 qv-summary-content is-open">
+                            <div class="qv-summary-content__inner">
+                                <div class="table-responsive">
+                                    <table class="table table-striped mb-0 text-center align-middle ch-summary-table">
+                                        <thead class="table-dark small">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Nombre</th>
+                                                <th>Celular</th>
+                                                <th>Pronósticos</th>
+                                                <th class="text-end">Valor</th>
+                                                <th class="text-center">Acción</th>
+                                            </tr>
+                                        </thead>
+
+                                        <tbody id="tickets-summary-body"></tbody>
+                                    </table>
+                                </div>
+
+                                <div id="empty-state-msg" class="text-center py-4 text-muted small bg-light ch-empty-state" style="display:none;">
+                                    Aún no has agregado ninguna quiniela.
+                                </div>
                             </div>
                         </div>
 
@@ -658,6 +688,7 @@ $hasMatches = $hasCurrentRound && !empty($matches);
                 </div>
             </div>
         </div>
+
     <?php else: ?>
         <div class="ch-empty-round-section text-center">
             <div class="container py-5">

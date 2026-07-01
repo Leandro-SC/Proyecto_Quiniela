@@ -46,11 +46,11 @@
             });
         });
     }
-    
+
     function initNavbarBehavior() {
         var navbar = document.querySelector('.navbar');
         var collapse = document.getElementById('mainNavbar');
-        
+
         if (!navbar || !collapse) return;
 
         // Al empezar a abrir el menú
@@ -85,11 +85,11 @@
     // --- LÓGICA PRINCIPAL ---
     function initTickets() {
         var matchesTableBody = document.getElementById('matches-table-body');
-        
+
         // REEMPLAZO DE BOTONES (CRUCIAL para evitar envíos dobles)
         var btnAddTicket = cleanReplaceElement('btn-add-ticket');
         var btnSendWhatsapp = cleanReplaceElement('btn-send-whatsapp');
-        
+
         var ticketsSummaryBody = document.getElementById('tickets-summary-body');
         var ticketsCountBadge = document.getElementById('tickets-count-badge');
         var ticketsTotalAmount = document.getElementById('tickets-total-amount');
@@ -118,34 +118,34 @@
             btn.classList.add('active', 'btn-primary', 'text-white');
             tr.classList.remove('table-danger');
         };
-        
+
         // --- 1. LÓGICA BOTÓN ALEATORIO ---
-   // --- 1. LÓGICA BOTÓN ALEATORIO (CORREGIDO) ---
+        // --- 1. LÓGICA BOTÓN ALEATORIO (CORREGIDO) ---
         // Aceptamos ambos IDs por si acaso ('btn-random-fill' o 'btn-random-pick')
         var btnRandom = document.getElementById('btn-random-fill') || document.getElementById('btn-random-pick');
-        
+
         if (btnRandom) {
-            btnRandom.addEventListener('click', function(e) {
+            btnRandom.addEventListener('click', function (e) {
                 e.preventDefault(); // Evitar saltos de página
-                
+
                 // Efecto visual de carga
                 var originalContent = btnRandom.innerHTML;
                 btnRandom.disabled = true;
                 btnRandom.innerHTML = '<span class="spinner-border spinner-border-sm"></span> ...';
-                
+
                 // Pequeño retardo para que se note la acción
-                setTimeout(function() {
+                setTimeout(function () {
                     var rows = matchesTableBody.querySelectorAll('tr'); // Seleccionamos todas las filas
-                    
-                    rows.forEach(function(row) {
+
+                    rows.forEach(function (row) {
                         // Buscar los 3 botones de opción (L, E, V) en esta fila
                         var buttons = row.querySelectorAll('.btn-choice');
-                        
+
                         // Solo actuamos si encontramos los 3 botones (para evitar filas de cabecera vacías)
                         if (buttons.length >= 3) {
                             // Limpiar selección previa en esta fila visualmente
-                            buttons.forEach(function(b) { 
-                                b.classList.remove('active', 'btn-primary', 'text-white'); 
+                            buttons.forEach(function (b) {
+                                b.classList.remove('active', 'btn-primary', 'text-white');
                             });
 
                             // Elegir índice al azar: 0, 1 o 2
@@ -155,14 +155,14 @@
                             // Simular clic o activar manualmente
                             if (selectedBtn) {
                                 // Opción A: Simular clic (activa la lógica de validación visual existente)
-                                selectedBtn.click(); 
-                                
+                                selectedBtn.click();
+
                                 // Opción B: Forzar estilos (si el clic falla por alguna razón)
                                 // selectedBtn.classList.add('active', 'btn-primary', 'text-white');
                             }
                         }
                     });
-                    
+
                     // Restaurar botón
                     btnRandom.disabled = false;
                     btnRandom.innerHTML = originalContent;
@@ -179,26 +179,46 @@
         }
 
         // --- 2. LÓGICA ELIMINAR TICKET (Delegación) ---
-        ticketsSummaryBody.addEventListener('click', function(e) {
-            // Detectar clic en el botón de eliminar o su ícono
+        ticketsSummaryBody.addEventListener('click', function (e) {
             var btn = e.target.closest('.btn-delete-row');
-            if (!btn) return;
-            
-            var index = parseInt(btn.getAttribute('data-index'));
-            
-            // Eliminar del arreglo
-            tickets.splice(index, 1);
-            
-            // Volver a renderizar
-            renderTickets(tickets, ticketsSummaryBody, ticketsCountBadge, ticketsTotalAmount, btnSendWhatsapp);
-            
-            // Mensaje opcional
+
+            if (!btn) {
+                return;
+            }
+
+            var index = parseInt(btn.getAttribute('data-index'), 10);
+            var row = btn.closest('tr');
+
+            if (!Number.isInteger(index) || index < 0) {
+                return;
+            }
+
+            if (row) {
+                row.classList.add('ticket-summary-row--removing');
+
+                window.setTimeout(function () {
+                    tickets.splice(index, 1);
+                    renderTickets(tickets, ticketsSummaryBody, ticketsCountBadge, ticketsTotalAmount, btnSendWhatsapp);
+                }, 220);
+            } else {
+                tickets.splice(index, 1);
+                renderTickets(tickets, ticketsSummaryBody, ticketsCountBadge, ticketsTotalAmount, btnSendWhatsapp);
+            }
+
             if (typeof Swal !== 'undefined') {
-                const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
-                Toast.fire({ icon: 'info', title: 'Ticket eliminado' });
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 1300
+                });
+
+                Toast.fire({
+                    icon: 'info',
+                    title: 'Quiniela eliminada'
+                });
             }
         });
-
         // B. AGREGAR TICKET (Con la lógica matemática de quiniela_core.js)
         btnAddTicket.addEventListener('click', function (e) {
             e.preventDefault();
@@ -211,16 +231,16 @@
             if (!state.matchesLoaded) return showAlert('Error', 'No hay partidos disponibles.', 'error');
 
             // --- VALIDACIÓN MATEMÁTICA ---
-            
+
             // 1. Contar filas de partidos (buscamos las que tienen atributo data-match-id)
             var allRows = matchesTableBody.querySelectorAll('tr[data-match-id]');
             // Fallback: si no tienen ID, contamos todas las que tengan botones
-            if(allRows.length === 0) {
-                allRows = Array.from(matchesTableBody.querySelectorAll('tr')).filter(function(r){
+            if (allRows.length === 0) {
+                allRows = Array.from(matchesTableBody.querySelectorAll('tr')).filter(function (r) {
                     return r.querySelector('button.btn-choice');
                 });
             }
-            
+
             var totalMatches = allRows.length;
 
             // 2. Contar selecciones activas
@@ -230,12 +250,12 @@
             // 3. COMPARACIÓN DIRECTA
             if (totalSelected < totalMatches) {
                 // Pintar de rojo lo que falta
-                allRows.forEach(function(row) {
+                allRows.forEach(function (row) {
                     if (!row.querySelector('button.btn-choice.active')) {
                         row.classList.add('table-danger');
                     }
                 });
-                
+
                 var missing = totalMatches - totalSelected;
                 return showAlert('Quiniela Incompleta', 'Te faltan seleccionar ' + missing + ' partido(s).', 'error');
             }
@@ -245,14 +265,20 @@
             // Construir datos del ticket
             var sequence = [];
             var selections = [];
-            
-            allRows.forEach(function(row) {
+            var selectionDetails = [];
+
+            allRows.forEach(function (row) {
                 var btn = row.querySelector('button.btn-choice.active');
-                var choice = btn.getAttribute('data-choice');
-                var matchId = parseInt(row.getAttribute('data-match-id') || 0);
-                
+                var choice = btn ? (btn.getAttribute('data-choice') || '') : '';
+                var matchId = parseInt(row.getAttribute('data-match-id') || '0', 10);
+
                 sequence.push(choice);
-                selections.push({ match_id: matchId, pick: choice });
+                selections.push({
+                    match_id: matchId,
+                    pick: choice
+                });
+
+                selectionDetails.push(extractTicketMatchDetail(row, choice));
             });
 
             tickets.push({
@@ -260,7 +286,8 @@
                 phone: phone,
                 sequence: sequence.join('-'),
                 amount: state.baseAmount,
-                selections: selections
+                selections: selections,
+                details: selectionDetails
             });
 
             renderTickets(tickets, ticketsSummaryBody, ticketsCountBadge, ticketsTotalAmount, btnSendWhatsapp);
@@ -284,7 +311,7 @@
                 var payload = {
                     name: inputName.value.trim(),
                     phone: inputPhone.value.trim(),
-                    tickets: tickets.map(function(t) {
+                    tickets: tickets.map(function (t) {
                         return { sequence: t.sequence, amount: t.amount, selections: t.selections };
                     }),
                     league: state.leagueLabel,
@@ -297,85 +324,219 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 })
-                .then(function(res) { return res.json(); })
-                .then(function(data) {
-                    if (typeof Swal !== 'undefined') Swal.close();
-                    
-                    if (data.success && data.whatsAppUrl) {
-                        // Éxito: abrir WhatsApp
-                       window.location.href = data.whatsAppUrl;
-                        // Opcional: window.location.reload(); 
-                    } else {
-                        showAlert('Error', data.message || 'No se pudo guardar.', 'error');
-                    }
-                })
-                .catch(function(err) {
-                    if (typeof Swal !== 'undefined') Swal.close();
-                    console.error(err);
-                    showAlert('Error', 'Fallo de conexión.', 'error');
-                });
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        if (typeof Swal !== 'undefined') Swal.close();
+
+                        if (data.success && data.whatsAppUrl) {
+                            // Éxito: abrir WhatsApp
+                            window.location.href = data.whatsAppUrl;
+                            // Opcional: window.location.reload(); 
+                        } else {
+                            showAlert('Error', data.message || 'No se pudo guardar.', 'error');
+                        }
+                    })
+                    .catch(function (err) {
+                        if (typeof Swal !== 'undefined') Swal.close();
+                        console.error(err);
+                        showAlert('Error', 'Fallo de conexión.', 'error');
+                    });
             });
         }
     }
 
     // --- UI HELPERS ---
-function renderTickets(tickets, tbody, badge, totalEl, btnSend) {
+
+    function getSafeText(element) {
+        return element ? String(element.textContent || '').trim() : '';
+    }
+
+    function escapeAttr(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    function resolveChoiceLabel(choice) {
+        if (choice === 'L') return 'Gana local';
+        if (choice === 'E') return 'Empate';
+        if (choice === 'V') return 'Gana visita';
+        return 'Sin selección';
+    }
+
+    function resolveChoiceClass(choice) {
+        if (choice === 'L') return 'local';
+        if (choice === 'E') return 'empate';
+        if (choice === 'V') return 'visita';
+        return 'default';
+    }
+
+    function extractTicketMatchDetail(row, choice) {
+        var teamBoxes = row.querySelectorAll('.ch-team-box');
+        var homeBox = teamBoxes[0] || null;
+        var awayBox = teamBoxes[1] || null;
+
+        var homeName = getSafeText(homeBox ? homeBox.querySelector('span') : null) || 'Local';
+        var awayName = getSafeText(awayBox ? awayBox.querySelector('span') : null) || 'Visita';
+
+        var homeLogo = homeBox && homeBox.querySelector('img')
+            ? homeBox.querySelector('img').getAttribute('src') || ''
+            : '';
+
+        var awayLogo = awayBox && awayBox.querySelector('img')
+            ? awayBox.querySelector('img').getAttribute('src') || ''
+            : '';
+
+        var matchDate = getSafeText(row.querySelector('.match-date'));
+        var matchTime = getSafeText(row.querySelector('.match-time'));
+        var leagueAbbr = getSafeText(row.querySelector('.match-league-badge'));
+
+        return {
+            home_name: homeName,
+            away_name: awayName,
+            home_logo: homeLogo,
+            away_logo: awayLogo,
+            pick: choice || '',
+            date: matchDate,
+            time: matchTime,
+            league: leagueAbbr
+        };
+    }
+
+    function renderTicketSelectionsDetail(details, fallbackSequence) {
+        if (!Array.isArray(details) || details.length === 0) {
+            return `
+                <div class="ticket-picks-fallback">
+                    ${escapeHtml(fallbackSequence || 'Sin detalle disponible')}
+                </div>
+            `;
+        }
+
+        return `
+            <div class="ticket-picks-list">
+                ${details.map(function (item) {
+            var choiceClass = resolveChoiceClass(item.pick);
+            var choiceLabel = resolveChoiceLabel(item.pick);
+            var metaParts = [];
+
+            if (item.league) metaParts.push(escapeHtml(item.league));
+            if (item.date) metaParts.push(escapeHtml(item.date));
+            if (item.time) metaParts.push(escapeHtml(item.time));
+
+            return `
+                        <div class="ticket-pick-item">
+                            <div class="ticket-pick-teams">
+                                <div class="ticket-pick-team">
+                                    ${item.home_logo ? `<img src="${escapeAttr(item.home_logo)}" alt="${escapeAttr(item.home_name)}">` : ''}
+                                    <span>${escapeHtml(item.home_name)}</span>
+                                </div>
+
+                                <div class="ticket-pick-vs">vs</div>
+
+                                <div class="ticket-pick-team ticket-pick-team--away">
+                                    ${item.away_logo ? `<img src="${escapeAttr(item.away_logo)}" alt="${escapeAttr(item.away_name)}">` : ''}
+                                    <span>${escapeHtml(item.away_name)}</span>
+                                </div>
+                            </div>
+
+                            <div class="ticket-pick-footer">
+                                <span class="ticket-pick-badge ticket-pick-badge--${choiceClass}">
+                                    ${escapeHtml(choiceLabel)}
+                                </span>
+
+                                <span class="ticket-pick-match-meta">
+                                    ${metaParts.join(' · ')}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+        }).join('')}
+            </div>
+        `;
+    }
+
+    function renderTickets(tickets, tbody, badge, totalEl, btnSend) {
         tbody.innerHTML = '';
         var total = 0;
-        
+
         tickets.forEach(function (t, i) {
             var tr = document.createElement('tr');
+            tr.className = 'ticket-summary-row ticket-summary-row--enter';
+
             tr.innerHTML = `
                 <td>${i + 1}</td>
                 <td>${escapeHtml(t.name)}</td>
                 <td>${escapeHtml(t.phone)}</td>
-                <td class="small">${t.sequence}</td>
-                <td class="text-end">${formatAmount(t.amount, state.currency)}</td>
-                <td>
-                    <button class="btn btn-danger btn-sm btn-delete-row" data-index="${i}" title="Eliminar este ticket">
+                <td class="ticket-picks-cell">
+                    ${renderTicketSelectionsDetail(t.details || [], t.sequence || '')}
+                </td>
+                <td class="text-end fw-bold">${formatAmount(t.amount, state.currency)}</td>
+                <td class="text-center">
+                    <button
+                        type="button"
+                        class="btn btn-delete-row"
+                        data-index="${i}"
+                        title="Eliminar este ticket"
+                        aria-label="Eliminar quiniela ${i + 1}">
                         <i class="bi bi-x-lg"></i>
                     </button>
                 </td>
             `;
+
             tbody.appendChild(tr);
-            total += t.amount;
+
+            window.requestAnimationFrame(function () {
+                tr.classList.add('is-visible');
+            });
+
+            total += Number(t.amount || 0);
         });
 
         badge.textContent = tickets.length;
         totalEl.textContent = formatAmount(total, state.currency);
-        
-        // Habilitar/Deshabilitar botón WhatsApp
+
+        badge.classList.remove('qv-total-pop');
+        totalEl.classList.remove('qv-total-pop');
+
+        void badge.offsetWidth;
+        void totalEl.offsetWidth;
+
+        badge.classList.add('qv-total-pop');
+        totalEl.classList.add('qv-total-pop');
+
         if (btnSend) {
             btnSend.disabled = tickets.length === 0;
         }
     }
 
     function cleanSelections(tbody) {
-        tbody.querySelectorAll('button.btn-choice').forEach(function(btn){
+        tbody.querySelectorAll('button.btn-choice').forEach(function (btn) {
             btn.classList.remove('active', 'btn-primary', 'text-white');
         });
     }
 
     function initCountdown() {
-        var c = document.getElementById('countdown'); if(!c) return;
-        function upd(){
+        var c = document.getElementById('countdown'); if (!c) return;
+        function upd() {
             var deadlineStr = c.getAttribute('data-deadline');
-            if(!deadlineStr) return;
+            if (!deadlineStr) return;
             var diff = new Date(deadlineStr) - new Date();
-            if(diff <= 0) return;
-            var s = Math.floor(diff/1000);
-            var d=Math.floor(s/86400); s-=d*86400;
-            var h=Math.floor(s/3600); s-=h*3600; var m=Math.floor(s/60); s-=m*60;
-            [['days',d],['hours',h],['minutes',m],['seconds',s]].forEach(function(p){
-                var el=c.querySelector('.countdown-value[data-unit="'+p[0]+'"]');
-                if(el) el.textContent=String(p[1]).padStart(2,'0');
+            if (diff <= 0) return;
+            var s = Math.floor(diff / 1000);
+            var d = Math.floor(s / 86400); s -= d * 86400;
+            var h = Math.floor(s / 3600); s -= h * 3600; var m = Math.floor(s / 60); s -= m * 60;
+            [['days', d], ['hours', h], ['minutes', m], ['seconds', s]].forEach(function (p) {
+                var el = c.querySelector('.countdown-value[data-unit="' + p[0] + '"]');
+                if (el) el.textContent = String(p[1]).padStart(2, '0');
             });
         }
         setInterval(upd, 1000); upd();
     }
-    
-    function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-    function formatAmount(n, c) { return '$' + (Number(n)||0).toFixed(2) + ' ' + c; }
+
+    function escapeHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+    function formatAmount(n, c) { return '$' + (Number(n) || 0).toFixed(2) + ' ' + c; }
 
     // --- INICIO ---
     document.addEventListener('DOMContentLoaded', function () {
@@ -395,28 +556,28 @@ function renderTickets(tickets, tbody, badge, totalEl, btnSend) {
    ========================================= */
 function initDynamicClock() {
     const dateElement = document.getElementById('dynamic-date');
-    
+
     if (!dateElement) return;
 
     function updateClock() {
         const now = new Date();
-        
+
         // Configuración para formato: "miércoles 17 de diciembre del 2025 14:51"
-        const options = { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
+        const options = {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
             day: 'numeric',
-            hour: '2-digit', 
+            hour: '2-digit',
             minute: '2-digit',
             hour12: false // Formato 24h (pon true si prefieres AM/PM)
         };
 
         // Generar texto en español
         let dateString = now.toLocaleDateString('es-ES', options);
-        
+
         // Pequeño truco: toLocaleDateString a veces separa hora con coma, la quitamos si quieres
-        dateString = dateString.replace(',', ''); 
+        dateString = dateString.replace(',', '');
 
         // Insertar en el HTML (Capitalizamos la primera letra)
         dateElement.textContent = dateString.charAt(0).toUpperCase() + dateString.slice(1);
@@ -428,9 +589,9 @@ function initDynamicClock() {
 }
 
 // --- IMPORTANTE: LLAMAR A LA FUNCIÓN AL CARGAR ---
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // ... tus otros inits ...
-    initDynamicClock(); 
+    initDynamicClock();
 });
 
 

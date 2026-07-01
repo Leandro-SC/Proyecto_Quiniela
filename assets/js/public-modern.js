@@ -363,258 +363,447 @@
         });
     }
 
-    function initDynamicCoach() {
-    var root = document.getElementById('quiniela-root');
+    function initSummaryToggle() {
+        var button = document.getElementById('qv-toggle-summary');
+        var content = document.getElementById('qv-summary-content');
 
-    if (!root) {
-        return;
-    }
-
-    var tableBody = document.getElementById('matches-table-body');
-    var nameInput = document.getElementById('player-name');
-    var phoneInput = document.getElementById('player-phone');
-    var addButton = document.getElementById('btn-add-ticket');
-    var whatsappButton = document.getElementById('btn-send-whatsapp');
-    var summaryBody = document.getElementById('tickets-summary-body');
-
-    if (!tableBody) {
-        return;
-    }
-
-    var overlay = document.createElement('div');
-    overlay.id = 'qv-coach-overlay';
-    overlay.innerHTML = ''
-        + '<div class="qv-coach-hand" aria-hidden="true">👆</div>'
-        + '<div class="qv-coach-tip"></div>';
-
-    document.body.appendChild(overlay);
-
-    var tip = overlay.querySelector('.qv-coach-tip');
-    var currentTarget = null;
-    var rafId = null;
-
-    function isVisible(el) {
-        if (!el) {
-            return false;
-        }
-
-        var rect = el.getBoundingClientRect();
-
-        return rect.width > 0 &&
-            rect.height > 0 &&
-            window.getComputedStyle(el).visibility !== 'hidden' &&
-            window.getComputedStyle(el).display !== 'none';
-    }
-
-    function hasTicketsAdded() {
-        if (!summaryBody) {
-            return false;
-        }
-
-        return summaryBody.querySelectorAll('tr').length > 0;
-    }
-
-    function getFirstPendingPickButton() {
-        var rows = tableBody.querySelectorAll('tr[data-match-id]');
-
-        for (var i = 0; i < rows.length; i++) {
-            var row = rows[i];
-
-            if (row.querySelector('button.btn-choice.active, button.btn-choice.selected, button.btn-choice.btn-warning')) {
-                continue;
-            }
-
-            var centerButton = row.querySelector('button.btn-choice[data-choice="E"]:not(:disabled)');
-            var firstButton = row.querySelector('button.btn-choice:not(:disabled)');
-
-            return centerButton || firstButton || row;
-        }
-
-        return null;
-    }
-
-    function resolveNextTarget() {
-        var pendingPick = getFirstPendingPickButton();
-
-        if (pendingPick) {
-            return {
-                element: pendingPick,
-                message: 'Selecciona este partido'
-            };
-        }
-
-        if (nameInput && nameInput.value.trim() === '') {
-            return {
-                element: nameInput,
-                message: 'Ingresa tu nombre'
-            };
-        }
-
-        if (phoneInput && phoneInput.value.trim() === '') {
-            return {
-                element: phoneInput,
-                message: 'Ingresa tu celular'
-            };
-        }
-
-        if (addButton && !hasTicketsAdded()) {
-            return {
-                element: addButton,
-                message: 'Agrega tu quiniela'
-            };
-        }
-
-        if (whatsappButton && hasTicketsAdded() && !whatsappButton.disabled) {
-            return {
-                element: whatsappButton,
-                message: 'Envíala por WhatsApp'
-            };
-        }
-
-        return null;
-    }
-
-    function positionCoach(target, message) {
-        if (!target || !isVisible(target)) {
-            hideCoach();
+        if (!button || !content) {
             return;
         }
 
-        var rect = target.getBoundingClientRect();
-        var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+        var label = button.querySelector('[data-summary-toggle-label]');
+        var icon = button.querySelector('[data-summary-toggle-icon]');
 
-        var x = rect.left + scrollLeft + (rect.width / 2);
-        var y = rect.top + scrollTop + (rect.height / 2);
+        function setState(isOpen) {
+            content.classList.toggle('is-open', isOpen);
+            button.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
 
-        overlay.style.transform = 'translate3d(' + x + 'px, ' + y + 'px, 0)';
+            if (label) {
+                label.textContent = isOpen ? 'Ocultar' : 'Mostrar';
+            }
 
-        if (tip) {
-            tip.textContent = message;
+            if (icon) {
+                icon.className = isOpen ? 'bi bi-chevron-up' : 'bi bi-chevron-down';
+            }
         }
 
-        overlay.classList.add('is-active');
-        currentTarget = target;
+        setState(true);
+
+        button.addEventListener('click', function () {
+            setState(!content.classList.contains('is-open'));
+        });
+
+        window.qvOpenSummary = function () {
+            setState(true);
+        };
     }
 
-    function hideCoach() {
-        overlay.classList.remove('is-active');
-        currentTarget = null;
-    }
+    function initTicketBoardToggle() {
+        var toggleButton = document.getElementById('qv-toggle-ticket-board');
+        var panel = document.getElementById('qv-ticket-panel');
 
-    function updateCoach() {
-        if (rafId) {
-            window.cancelAnimationFrame(rafId);
+        if (!toggleButton || !panel) {
+            return;
         }
 
-        rafId = window.requestAnimationFrame(function () {
-            var next = resolveNextTarget();
+        var label = toggleButton.querySelector('[data-ticket-toggle-label]');
+        var icon = toggleButton.querySelector('[data-ticket-toggle-icon]');
 
-            if (!next) {
+        function applyState(isOpen) {
+            panel.classList.toggle('is-open', isOpen);
+            toggleButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+
+            if (label) {
+                label.textContent = isOpen ? 'Cerrar ticket' : 'Abrir ticket';
+            }
+
+            if (icon) {
+                icon.className = isOpen ? 'bi bi-chevron-up' : 'bi bi-chevron-down';
+            }
+        }
+
+        applyState(true);
+
+        toggleButton.addEventListener('click', function () {
+            applyState(!panel.classList.contains('is-open'));
+        });
+
+        window.qvOpenTicketBoard = function () {
+            applyState(true);
+        };
+    }
+
+    function initDynamicCoach() {
+        var root = document.getElementById('quiniela-root');
+
+        if (!root) {
+            return;
+        }
+
+        var tableBody = document.getElementById('matches-table-body');
+        var nameInput = document.getElementById('player-name');
+        var phoneInput = document.getElementById('player-phone');
+        var addButton = document.getElementById('btn-add-ticket');
+        var whatsappButton = document.getElementById('btn-send-whatsapp');
+        var summaryBody = document.getElementById('tickets-summary-body');
+
+        if (!tableBody) {
+            return;
+        }
+
+        var overlay = document.getElementById('qv-coach-overlay');
+
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'qv-coach-overlay';
+            overlay.innerHTML = ''
+                + '<div class="qv-coach-hand" aria-hidden="true">👆</div>'
+                + '<div class="qv-coach-tip"></div>';
+
+            document.body.appendChild(overlay);
+        }
+
+        var tip = overlay.querySelector('.qv-coach-tip');
+        var rafId = null;
+        var lastTarget = null;
+
+        function isVisible(el) {
+            if (!el) {
+                return false;
+            }
+
+            var style = window.getComputedStyle(el);
+            var rect = el.getBoundingClientRect();
+
+            return style.display !== 'none'
+                && style.visibility !== 'hidden'
+                && rect.width > 0
+                && rect.height > 0;
+        }
+
+        function hasTicketsAdded() {
+            return summaryBody && summaryBody.querySelectorAll('tr').length > 0;
+        }
+
+        function isRowCompleted(row) {
+            return !!row.querySelector(
+                'button.btn-choice.active, ' +
+                'button.btn-choice.selected, ' +
+                'button.btn-choice.btn-warning, ' +
+                'button.btn-ch-pick.active, ' +
+                'button.btn-ch-pick.selected, ' +
+                'button.btn-ch-pick.btn-warning'
+            );
+        }
+
+        function getTargetButtonFromRow(row) {
+            if (!row) {
+                return null;
+            }
+
+            var buttons = row.querySelectorAll('button.btn-choice:not(:disabled), button.btn-ch-pick:not(:disabled)');
+
+            if (!buttons.length) {
+                return null;
+            }
+
+            /*
+             * En móvil apuntamos primero a L porque visualmente está a la izquierda
+             * y es más natural para iniciar la selección.
+             */
+            var localButton = row.querySelector('button[data-choice="L"]:not(:disabled)');
+            var empateButton = row.querySelector('button[data-choice="E"]:not(:disabled)');
+            var visitaButton = row.querySelector('button[data-choice="V"]:not(:disabled)');
+
+            return localButton || empateButton || visitaButton || buttons[0];
+        }
+
+        function getFirstPendingPickButton() {
+            var rows = tableBody.querySelectorAll('tr[data-match-id]');
+
+            for (var i = 0; i < rows.length; i++) {
+                if (!isRowCompleted(rows[i])) {
+                    return getTargetButtonFromRow(rows[i]);
+                }
+            }
+
+            return null;
+        }
+
+        function resolveNextTarget() {
+            var pendingPick = getFirstPendingPickButton();
+
+            if (pendingPick) {
+                return {
+                    element: pendingPick,
+                    type: 'pick',
+                    message: 'Selecciona este partido'
+                };
+            }
+
+            if (nameInput && nameInput.value.trim() === '') {
+                return {
+                    element: nameInput,
+                    type: 'input',
+                    message: 'Ingresa tu nombre'
+                };
+            }
+
+            if (phoneInput && phoneInput.value.trim() === '') {
+                return {
+                    element: phoneInput,
+                    type: 'input',
+                    message: 'Ingresa tu celular'
+                };
+            }
+
+            if (addButton && !hasTicketsAdded()) {
+                return {
+                    element: addButton,
+                    type: 'button',
+                    message: 'Agrega tu quiniela'
+                };
+            }
+
+            if (whatsappButton && hasTicketsAdded() && !whatsappButton.disabled) {
+                return {
+                    element: whatsappButton,
+                    type: 'button',
+                    message: 'Envíala por WhatsApp'
+                };
+            }
+
+            return null;
+        }
+
+        function getCoachPoint(target, type) {
+            var rect = target.getBoundingClientRect();
+            var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+
+            var x = rect.left + scrollLeft + rect.width / 2;
+            var y = rect.top + scrollTop + rect.height / 2;
+
+            if (type === 'pick') {
+                /*
+                 * El emoji 👆 tiene la punta visual arriba.
+                 * Por eso colocamos el overlay un poco debajo del centro,
+                 * para que el dedo “toque” el botón.
+                 */
+                x = rect.left + scrollLeft + rect.width / 2;
+                y = rect.top + scrollTop + rect.height * 0.86;
+            }
+
+            if (type === 'input') {
+                x = rect.left + scrollLeft + rect.width * 0.86;
+                y = rect.top + scrollTop + rect.height * 0.58;
+            }
+
+            if (type === 'button') {
+                x = rect.left + scrollLeft + rect.width * 0.82;
+                y = rect.top + scrollTop + rect.height * 0.58;
+            }
+
+            return {
+                x: Math.round(x),
+                y: Math.round(y)
+            };
+        }
+
+        function scrollTargetIntoView(target) {
+            if (!target || !isVisible(target)) {
+                return;
+            }
+
+            var rect = target.getBoundingClientRect();
+            var viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+
+            if (rect.top < 88 || rect.bottom > viewportHeight - 88) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                    inline: 'nearest'
+                });
+            }
+        }
+
+        function positionCoach(targetData) {
+            if (!targetData || !targetData.element || !isVisible(targetData.element)) {
                 hideCoach();
                 return;
             }
 
-            positionCoach(next.element, next.message);
+            var target = targetData.element;
+            var type = targetData.type;
+            var point = getCoachPoint(target, type);
+
+            overlay.classList.remove(
+                'is-pick-target',
+                'is-input-target',
+                'is-button-target'
+            );
+
+            overlay.classList.add('is-' + type + '-target');
+
+            overlay.style.left = '0px';
+            overlay.style.top = '0px';
+            overlay.style.transform = 'translate3d(' + point.x + 'px, ' + point.y + 'px, 0)';
+
+            if (tip) {
+                tip.textContent = targetData.message;
+            }
+
+            overlay.classList.add('is-active');
+
+            if (lastTarget && lastTarget !== target) {
+                lastTarget.classList.remove('qv-coach-current-target');
+            }
+
+            target.classList.add('qv-coach-current-target');
+            lastTarget = target;
+        }
+
+        function hideCoach() {
+            overlay.classList.remove('is-active');
+
+            if (lastTarget) {
+                lastTarget.classList.remove('qv-coach-current-target');
+                lastTarget = null;
+            }
+        }
+
+        function updateCoach(options) {
+            if (rafId) {
+                window.cancelAnimationFrame(rafId);
+            }
+
+            rafId = window.requestAnimationFrame(function () {
+                var next = resolveNextTarget();
+
+                if (!next) {
+                    hideCoach();
+                    return;
+                }
+
+                if (options && options.scroll) {
+                    scrollTargetIntoView(next.element);
+                }
+
+                positionCoach(next);
+            });
+        }
+
+        function delayedUpdate(scroll) {
+            window.setTimeout(function () {
+                updateCoach({
+                    scroll: !!scroll
+                });
+            }, 80);
+        }
+
+        document.addEventListener('click', function () {
+            delayedUpdate(false);
         });
+
+        document.addEventListener('change', function () {
+            delayedUpdate(false);
+        });
+
+        document.addEventListener('keyup', function () {
+            delayedUpdate(false);
+        });
+
+        if (nameInput) {
+            nameInput.addEventListener('input', function () {
+                delayedUpdate(false);
+            });
+
+            nameInput.addEventListener('focus', function () {
+                delayedUpdate(false);
+            });
+        }
+
+        if (phoneInput) {
+            phoneInput.addEventListener('input', function () {
+                delayedUpdate(false);
+            });
+
+            phoneInput.addEventListener('focus', function () {
+                delayedUpdate(false);
+            });
+        }
+
+        if (addButton) {
+            addButton.addEventListener('click', function () {
+                if (typeof window.qvOpenSummary === 'function') {
+                    window.qvOpenSummary();
+                }
+
+                delayedUpdate(true);
+            });
+        }
+
+        if (whatsappButton) {
+            whatsappButton.addEventListener('click', function () {
+                hideCoach();
+                overlay.classList.add('is-done');
+            });
+        }
+
+        window.addEventListener('scroll', function () {
+            updateCoach({
+                scroll: false
+            });
+        }, { passive: true });
+
+        window.addEventListener('resize', function () {
+            delayedUpdate(false);
+        });
+
+        if (typeof MutationObserver !== 'undefined') {
+            var tableObserver = new MutationObserver(function () {
+                delayedUpdate(false);
+            });
+
+            tableObserver.observe(tableBody, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['class', 'disabled']
+            });
+
+            if (summaryBody) {
+                var summaryObserver = new MutationObserver(function () {
+                    delayedUpdate(false);
+                });
+
+                summaryObserver.observe(summaryBody, {
+                    childList: true,
+                    subtree: true
+                });
+            }
+        }
+
+        window.setTimeout(function () {
+            updateCoach({
+                scroll: true
+            });
+        }, 500);
     }
 
-    function softScrollToTarget() {
-        var next = resolveNextTarget();
-
-        if (!next || !next.element) {
+    function boot() {
+        if (!document.body.classList.contains('qv-public-body') && document.body.classList.contains('qv-admin-body')) {
             return;
         }
 
-        var rect = next.element.getBoundingClientRect();
-        var viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+        log('Archivo public-modern.js cargado.');
 
-        if (rect.top < 90 || rect.bottom > viewportHeight - 90) {
-            next.element.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center',
-                inline: 'nearest'
-            });
-        }
+        initHeroEntrance();
+        initHeroAnimations();
+        initPickButtons();
+        initSummaryToggle();
+        initDynamicCoach();
     }
-
-    document.addEventListener('click', function () {
-        window.setTimeout(updateCoach, 120);
-    });
-
-    document.addEventListener('change', function () {
-        window.setTimeout(updateCoach, 120);
-    });
-
-    if (nameInput) {
-        nameInput.addEventListener('input', updateCoach);
-        nameInput.addEventListener('focus', updateCoach);
-    }
-
-    if (phoneInput) {
-        phoneInput.addEventListener('input', updateCoach);
-        phoneInput.addEventListener('focus', updateCoach);
-    }
-
-    if (addButton) {
-        addButton.addEventListener('click', function () {
-            window.setTimeout(function () {
-                updateCoach();
-                softScrollToTarget();
-            }, 180);
-        });
-    }
-
-    if (whatsappButton) {
-        whatsappButton.addEventListener('click', function () {
-            overlay.classList.remove('is-active');
-            overlay.classList.add('is-done');
-        });
-    }
-
-    window.addEventListener('scroll', updateCoach, { passive: true });
-    window.addEventListener('resize', updateCoach);
-
-    if (summaryBody && typeof MutationObserver !== 'undefined') {
-        var summaryObserver = new MutationObserver(updateCoach);
-
-        summaryObserver.observe(summaryBody, {
-            childList: true,
-            subtree: true
-        });
-    }
-
-    if (typeof MutationObserver !== 'undefined') {
-        var tableObserver = new MutationObserver(function () {
-            window.setTimeout(updateCoach, 80);
-        });
-
-        tableObserver.observe(tableBody, {
-            childList: true,
-            subtree: true,
-            attributes: true,
-            attributeFilter: ['class', 'disabled']
-        });
-    }
-
-    window.setTimeout(function () {
-        updateCoach();
-        softScrollToTarget();
-    }, 450);
-}
-
-function boot() {
-    if (!document.body.classList.contains('qv-public-body') && document.body.classList.contains('qv-admin-body')) {
-        return;
-    }
-
-    log('Archivo public-modern.js cargado.');
-
-    initHeroEntrance();
-    initHeroAnimations();
-    initPickButtons();
-    initDynamicCoach();
-}
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', boot);

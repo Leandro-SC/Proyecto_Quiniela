@@ -1987,3 +1987,1874 @@ body:not(.qv-admin-body) hr {
         padding: 0.72rem 0.45rem !important;
     }
 }
+
+/* =====================================================
+   HOME ETAPA 3 · TUS QUINIELAS APP PREMIUM
+   ===================================================== */
+
+/* Contenedor general del bloque de formulario/resumen */
+body.qv-public-body .ch-form-area,
+body:not(.qv-admin-body) .ch-form-area {
+    position: relative;
+    padding-top: 3rem !important;
+    padding-bottom: 4rem !important;
+    background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.08), transparent 24rem),
+        radial-gradient(circle at bottom right, rgba(20, 184, 166, 0.10), transparent 24rem),
+        linear-gradient(180deg, #f8fbff 0%, #ffffff 52%, #eef4ff 100%) !important;
+}
+
+/* Caja interna */
+body.qv-public-body .ch-form-inner,
+body:not(.qv-admin-body) .ch-form-inner {
+    width: min(100% - 28px, 960px);
+    max-width: 960px !important;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Inputs en forma de tarjeta */
+body.qv-public-body .ch-form-area .row.g-3,
+body:not(.qv-admin-body) .ch-form-area .row.g-3 {
+    align-items: center;
+}
+
+body.qv-public-body #player-name,
+body.qv-public-body #player-phone,
+body:not(.qv-admin-body) #player-name,
+body:not(.qv-admin-body) #player-phone {
+    text-align: center;
+    text-transform: uppercase;
+    min-height: 60px !important;
+    border-radius: 22px !important;
+    background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.04), transparent 10rem),
+        #ffffff !important;
+    border: 1px solid rgba(15, 23, 42, 0.10) !important;
+    color: #06142f !important;
+    font-size: 0.98rem !important;
+    font-weight: 850 !important;
+    box-shadow:
+        0 18px 38px rgba(15, 23, 42, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.78) !important;
+}
+
+body.qv-public-body #player-phone,
+body:not(.qv-admin-body) #player-phone {
+    text-transform: none;
+}
+
+body.qv-public-body #player-name:focus,
+body.qv-public-body #player-phone:focus,
+body:not(.qv-admin-body) #player-name:focus,
+body:not(.qv-admin-body) #player-phone:focus {
+    border-color: rgba(37, 99, 235, 0.42) !important;
+    box-shadow:
+        0 0 0 5px rgba(37, 99, 235, 0.10),
+        0 22px 44px rgba(15, 23, 42, 0.10) !important;
+}
+
+/* Botón agregar */
+body.qv-public-body #btn-add-ticket,
+body:not(.qv-admin-body) #btn-add-ticket {
+    width: min(100%, 440px);
+    margin-left: auto;
+    margin-right: auto;
+    min-height: 60px !important;
+    border-radius: 999px !important;
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.28), transparent 8rem),
+        linear-gradient(135deg, #0062ff 0%, #0049c8 52%, #06142f 100%) !important;
+    box-shadow:
+        0 22px 46px rgba(0, 98, 255, 0.26),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+}
+
+body.qv-public-body #btn-add-ticket::before,
+body:not(.qv-admin-body) #btn-add-ticket::before {
+    content: "";
+    width: 9px;
+    height: 9px;
+    margin-right: 0.5rem;
+    border-radius: 999px;
+    display: inline-block;
+    background: #ffffff;
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.45);
+    animation: qvButtonDotPulse 1.5s ease-out infinite;
+}
+
+@keyframes qvButtonDotPulse {
+    0% {
+        transform: scale(0.9);
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.38);
+    }
+
+    70% {
+        transform: scale(1.08);
+        box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+    }
+
+    100% {
+        transform: scale(0.9);
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    }
+}
+
+/* Texto de ayuda */
+body.qv-public-body .help-text-transparent,
+body:not(.qv-admin-body) .help-text-transparent {
+    color: #64748b !important;
+    font-size: 0.84rem !important;
+    font-weight: 700 !important;
+}
+
+/* Botón WhatsApp como CTA principal */
+body.qv-public-body #btn-send-whatsapp,
+body:not(.qv-admin-body) #btn-send-whatsapp {
+    width: min(100%, 720px);
+    margin-left: auto;
+    margin-right: auto;
+    min-height: 62px !important;
+    border-radius: 999px !important;
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.24), transparent 8rem),
+        linear-gradient(135deg, #25d366 0%, #16a874 45%, #128c7e 100%) !important;
+    box-shadow:
+        0 24px 48px rgba(18, 140, 126, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+}
+
+body.qv-public-body #btn-send-whatsapp:disabled,
+body:not(.qv-admin-body) #btn-send-whatsapp:disabled {
+    opacity: 0.55;
+    filter: grayscale(0.28);
+    cursor: not-allowed;
+    box-shadow: none !important;
+}
+
+/* Wrapper resumen */
+body.qv-public-body .ch-ticket-summary-wrap,
+body:not(.qv-admin-body) .ch-ticket-summary-wrap {
+    width: min(100%, 760px);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Card principal de Tus Quinielas */
+body.qv-public-body .ch-ticket-summary-card,
+body:not(.qv-admin-body) .ch-ticket-summary-card {
+    position: relative;
+    border-radius: 34px !important;
+    overflow: hidden !important;
+    background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.06), transparent 18rem),
+        linear-gradient(180deg, #ffffff 0%, #f8fbff 100%) !important;
+    border: 1px solid rgba(15, 23, 42, 0.08) !important;
+    box-shadow:
+        0 32px 90px rgba(15, 23, 42, 0.14),
+        inset 0 1px 0 rgba(255, 255, 255, 0.76) !important;
+}
+
+body.qv-public-body .ch-ticket-summary-card::before,
+body:not(.qv-admin-body) .ch-ticket-summary-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 5px;
+    background: linear-gradient(90deg, #0062ff, #ffc107, #dc2626);
+    z-index: 2;
+}
+
+/* Header */
+body.qv-public-body .ch-ticket-summary-card .card-header,
+body:not(.qv-admin-body) .ch-ticket-summary-card .card-header {
+    padding: 1.25rem 1rem 1rem !important;
+    background: rgba(255, 255, 255, 0.82) !important;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06) !important;
+}
+
+body.qv-public-body .ch-ticket-summary-card .card-header h5,
+body:not(.qv-admin-body) .ch-ticket-summary-card .card-header h5 {
+    color: #06142f !important;
+    font-size: 1.2rem;
+    font-weight: 950 !important;
+    letter-spacing: -0.04em;
+}
+
+body.qv-public-body .ch-ticket-summary-card .card-header h5::before,
+body:not(.qv-admin-body) .ch-ticket-summary-card .card-header h5::before {
+    content: "🎟️";
+    margin-right: 0.45rem;
+}
+
+/* Tabla resumen */
+body.qv-public-body .ch-summary-table,
+body:not(.qv-admin-body) .ch-summary-table {
+    margin-bottom: 0 !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+}
+
+body.qv-public-body .ch-summary-table thead,
+body:not(.qv-admin-body) .ch-summary-table thead {
+    background: #111827 !important;
+}
+
+body.qv-public-body .ch-summary-table thead th,
+body:not(.qv-admin-body) .ch-summary-table thead th {
+    padding: 0.95rem 0.8rem !important;
+    background: #111827 !important;
+    color: #ffffff !important;
+    border: 0 !important;
+    font-size: 0.78rem !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.02em;
+}
+
+body.qv-public-body .ch-summary-table tbody td,
+body:not(.qv-admin-body) .ch-summary-table tbody td {
+    padding: 0.95rem 0.8rem !important;
+    color: #0f172a !important;
+    background: #ffffff !important;
+    border-color: rgba(226, 232, 240, 0.85) !important;
+    font-size: 0.86rem;
+    font-weight: 700;
+}
+
+/* Estado vacío */
+body.qv-public-body .ch-empty-state,
+body:not(.qv-admin-body) .ch-empty-state {
+    padding: 2rem 1rem !important;
+    background:
+        radial-gradient(circle at center, rgba(37, 99, 235, 0.05), transparent 16rem),
+        #f8fbff !important;
+    color: #64748b !important;
+    font-size: 0.92rem !important;
+    font-weight: 700;
+}
+
+body.qv-public-body .ch-empty-state::before,
+body:not(.qv-admin-body) .ch-empty-state::before {
+    content: "Aún no has agregado ninguna quiniela.";
+}
+
+/* Evita que el texto duplicado se vea raro si ya existe dentro */
+body.qv-public-body .ch-empty-state,
+body:not(.qv-admin-body) .ch-empty-state {
+    font-size: 0 !important;
+}
+
+body.qv-public-body .ch-empty-state::before,
+body:not(.qv-admin-body) .ch-empty-state::before {
+    font-size: 0.92rem !important;
+}
+
+/* Footer total */
+body.qv-public-body .ch-ticket-summary-card .card-footer,
+body:not(.qv-admin-body) .ch-ticket-summary-card .card-footer {
+    min-height: 70px;
+    border: 0 !important;
+    background:
+        radial-gradient(circle at right, rgba(255, 255, 255, 0.18), transparent 14rem),
+        linear-gradient(135deg, #ef233c 0%, #dc2626 55%, #b91c1c 100%) !important;
+}
+
+body.qv-public-body #tickets-count-badge,
+body:not(.qv-admin-body) #tickets-count-badge {
+    min-width: 34px;
+    height: 34px;
+    padding: 0;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #dc2626 !important;
+    font-size: 1rem;
+    font-weight: 950;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16);
+}
+
+body.qv-public-body #tickets-total-amount,
+body:not(.qv-admin-body) #tickets-total-amount {
+    color: #ffffff;
+    font-size: 1.22rem;
+    font-weight: 950;
+    letter-spacing: -0.03em;
+}
+
+/* =====================================================
+   MOBILE · TUS QUINIELAS COMO APP CARD
+   ===================================================== */
+
+@media (max-width: 768px) {
+    body.qv-public-body .ch-form-area,
+    body:not(.qv-admin-body) .ch-form-area {
+        padding-top: 2rem !important;
+        padding-bottom: 3rem !important;
+    }
+
+    body.qv-public-body .ch-form-inner,
+    body:not(.qv-admin-body) .ch-form-inner {
+        width: calc(100% - 18px);
+    }
+
+    body.qv-public-body #player-name,
+    body.qv-public-body #player-phone,
+    body:not(.qv-admin-body) #player-name,
+    body:not(.qv-admin-body) #player-phone {
+        min-height: 54px !important;
+        border-radius: 18px !important;
+        font-size: 0.9rem !important;
+    }
+
+    body.qv-public-body #btn-add-ticket,
+    body:not(.qv-admin-body) #btn-add-ticket,
+    body.qv-public-body #btn-send-whatsapp,
+    body:not(.qv-admin-body) #btn-send-whatsapp {
+        width: 100% !important;
+        min-height: 56px !important;
+        border-radius: 18px !important;
+        font-size: 0.88rem !important;
+    }
+
+    body.qv-public-body .ch-ticket-summary-wrap,
+    body:not(.qv-admin-body) .ch-ticket-summary-wrap {
+        width: 100%;
+        margin-top: 2rem !important;
+    }
+
+    body.qv-public-body .ch-ticket-summary-card,
+    body:not(.qv-admin-body) .ch-ticket-summary-card {
+        border-radius: 26px !important;
+    }
+
+    body.qv-public-body .ch-ticket-summary-card .card-header,
+    body:not(.qv-admin-body) .ch-ticket-summary-card .card-header {
+        padding: 1rem 0.85rem !important;
+    }
+
+    body.qv-public-body .ch-ticket-summary-card .card-header h5,
+    body:not(.qv-admin-body) .ch-ticket-summary-card .card-header h5 {
+        font-size: 1rem;
+    }
+
+   body.qv-public-body .ch-summary-table thead,
+body:not(.qv-admin-body) .ch-summary-table thead {
+    display: none;
+}
+
+body.qv-public-body .ch-summary-table,
+body:not(.qv-admin-body) .ch-summary-table,
+body.qv-public-body .ch-summary-table tbody,
+body:not(.qv-admin-body) .ch-summary-table tbody {
+    display: block;
+    width: 100%;
+}
+
+body.qv-public-body .ch-summary-table tbody {
+    padding: 0.2rem 0.2rem 0.8rem;
+}
+
+body.qv-public-body .ch-summary-table tbody tr,
+body:not(.qv-admin-body) .ch-summary-table tbody tr {
+    position: relative;
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    grid-template-areas:
+        "badge amount"
+        "name name"
+        "phone phone"
+        "pick pick"
+        "action action";
+    gap: 0.62rem;
+    align-items: start;
+    margin: 0.75rem;
+    padding: 0.95rem;
+    border-radius: 24px;
+    background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.05), transparent 10rem),
+        linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow:
+        0 18px 36px rgba(15, 23, 42, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    overflow: hidden;
+}
+
+body.qv-public-body .ch-summary-table tbody tr::before,
+body:not(.qv-admin-body) .ch-summary-table tbody tr::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 4px;
+    background: linear-gradient(90deg, #2563eb 0%, #f59e0b 55%, #ef4444 100%);
+    opacity: 0.95;
+}
+
+body.qv-public-body .ch-summary-table tbody td,
+body:not(.qv-admin-body) .ch-summary-table tbody td {
+    display: block;
+    min-width: 0;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    text-align: left !important;
+}
+
+/* # */
+body.qv-public-body .ch-summary-table tbody td:nth-child(1),
+body:not(.qv-admin-body) .ch-summary-table tbody td:nth-child(1) {
+    grid-area: badge;
+    width: 44px;
+    height: 44px;
+    border-radius: 15px !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: start;
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.30), transparent 4rem),
+        linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+    color: #ffffff !important;
+    font-size: 0.92rem;
+    font-weight: 950;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16);
+}
+
+/* Nombre */
+body.qv-public-body .ch-summary-table tbody td:nth-child(2),
+body:not(.qv-admin-body) .ch-summary-table tbody td:nth-child(2) {
+    grid-area: name;
+    padding: 0.72rem 0.88rem !important;
+    border-radius: 16px !important;
+    background: rgba(15, 23, 42, 0.04) !important;
+    color: #0f172a !important;
+    font-size: 0.96rem;
+    font-weight: 900;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+}
+
+body.qv-public-body .ch-summary-table tbody td:nth-child(2)::before,
+body:not(.qv-admin-body) .ch-summary-table tbody td:nth-child(2)::before {
+    content: "Nombre";
+    display: block;
+    margin-bottom: 0.22rem;
+    color: #64748b;
+    font-size: 0.64rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+/* Celular */
+body.qv-public-body .ch-summary-table tbody td:nth-child(3),
+body:not(.qv-admin-body) .ch-summary-table tbody td:nth-child(3) {
+    grid-area: phone;
+    padding: 0.72rem 0.88rem !important;
+    border-radius: 16px !important;
+    background: rgba(15, 23, 42, 0.035) !important;
+    color: #334155 !important;
+    font-size: 0.86rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+body.qv-public-body .ch-summary-table tbody td:nth-child(3)::before,
+body:not(.qv-admin-body) .ch-summary-table tbody td:nth-child(3)::before {
+    content: "Celular";
+    display: block;
+    margin-bottom: 0.22rem;
+    color: #64748b;
+    font-size: 0.64rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+/* Pronósticos */
+body.qv-public-body .ch-summary-table tbody td:nth-child(4),
+body:not(.qv-admin-body) .ch-summary-table tbody td:nth-child(4) {
+    grid-area: pick;
+    padding: 0.78rem 0.9rem !important;
+    border-radius: 16px !important;
+    background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.06), transparent 8rem),
+        #eef4ff !important;
+    border: 1px solid rgba(37, 99, 235, 0.10);
+    color: #1e293b !important;
+    font-size: 0.82rem;
+    font-weight: 800;
+    line-height: 1.42;
+    word-break: break-word;
+}
+
+body.qv-public-body .ch-summary-table tbody td:nth-child(4)::before,
+body:not(.qv-admin-body) .ch-summary-table tbody td:nth-child(4)::before {
+    content: "Pronósticos";
+    display: block;
+    margin-bottom: 0.28rem;
+    color: #2563eb;
+    font-size: 0.64rem;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+/* Valor */
+body.qv-public-body .ch-summary-table tbody td:nth-child(5),
+body:not(.qv-admin-body) .ch-summary-table tbody td:nth-child(5) {
+    grid-area: amount;
+    justify-self: end;
+    align-self: start;
+    padding: 0.62rem 0.8rem !important;
+    border-radius: 16px !important;
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.26), transparent 6rem),
+        linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    color: #0f172a !important;
+    font-size: 0.9rem;
+    font-weight: 950;
+    white-space: nowrap;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+/* Acción eliminar si existe una 6ta columna */
+body.qv-public-body .ch-summary-table tbody td:nth-child(6),
+body:not(.qv-admin-body) .ch-summary-table tbody td:nth-child(6) {
+    grid-area: action;
+    padding-top: 0.12rem !important;
+}
+
+/* Botón eliminar */
+body.qv-public-body .ch-summary-table tbody td:nth-child(6) .btn,
+body.qv-public-body .ch-summary-table tbody td:nth-child(6) button,
+body:not(.qv-admin-body) .ch-summary-table tbody td:nth-child(6) .btn,
+body:not(.qv-admin-body) .ch-summary-table tbody td:nth-child(6) button {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 14px !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.22), transparent 5rem),
+        linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 12px 24px rgba(220, 38, 38, 0.22);
+}
+
+/* Estado vacío más limpio */
+body.qv-public-body .ch-empty-state,
+body:not(.qv-admin-body) .ch-empty-state {
+    padding: 1.5rem 1rem !important;
+    margin: 0.75rem;
+    border-radius: 20px;
+    background:
+        radial-gradient(circle at center, rgba(37, 99, 235, 0.05), transparent 16rem),
+        #f8fbff !important;
+    border: 1px dashed rgba(148, 163, 184, 0.35);
+}
+
+/* Footer total */
+body.qv-public-body .ch-ticket-summary-card .card-footer,
+body:not(.qv-admin-body) .ch-ticket-summary-card .card-footer {
+    min-height: 68px;
+    padding: 0.95rem 1rem !important;
+    border-radius: 0 0 24px 24px;
+}
+
+body.qv-public-body #tickets-count-badge,
+body:not(.qv-admin-body) #tickets-count-badge {
+    min-width: 36px;
+    height: 36px;
+    border-radius: 13px;
+    font-size: 1rem;
+}
+
+body.qv-public-body #tickets-total-amount,
+body:not(.qv-admin-body) #tickets-total-amount {
+    font-size: 1.08rem;
+    font-weight: 950;
+}
+
+@media (max-width: 390px) {
+    body.qv-public-body .ch-summary-table tbody tr,
+    body:not(.qv-admin-body) .ch-summary-table tbody tr {
+        margin: 0.62rem;
+        padding: 0.82rem;
+        border-radius: 20px;
+    }
+
+    body.qv-public-body .ch-summary-table tbody td:nth-child(1),
+    body:not(.qv-admin-body) .ch-summary-table tbody td:nth-child(1) {
+        width: 40px;
+        height: 40px;
+        font-size: 0.86rem;
+    }
+
+    body.qv-public-body .ch-summary-table tbody td:nth-child(2),
+    body:not(.qv-admin-body) .ch-summary-table tbody td:nth-child(2),
+    body.qv-public-body .ch-summary-table tbody td:nth-child(3),
+    body:not(.qv-admin-body) .ch-summary-table tbody td:nth-child(3),
+    body.qv-public-body .ch-summary-table tbody td:nth-child(4),
+    body:not(.qv-admin-body) .ch-summary-table tbody td:nth-child(4) {
+        padding: 0.68rem 0.78rem !important;
+    }
+
+    body.qv-public-body .ch-summary-table tbody td:nth-child(5),
+    body:not(.qv-admin-body) .ch-summary-table tbody td:nth-child(5) {
+        font-size: 0.82rem;
+        padding: 0.56rem 0.7rem !important;
+    }
+}
+
+    body.qv-public-body .ch-empty-state,
+    body:not(.qv-admin-body) .ch-empty-state {
+        border-radius: 0;
+        padding: 1.5rem 1rem !important;
+    }
+
+    body.qv-public-body .ch-ticket-summary-card .card-footer,
+    body:not(.qv-admin-body) .ch-ticket-summary-card .card-footer {
+        min-height: 64px;
+        padding: 0.9rem 1rem !important;
+        border-radius: 0 0 26px 26px;
+    }
+
+    body.qv-public-body #tickets-total-amount,
+    body:not(.qv-admin-body) #tickets-total-amount {
+        font-size: 1rem;
+    }
+}
+
+/* =====================================================
+   TUS QUINIELAS · DETALLE PREMIUM CON EQUIPOS
+   ===================================================== */
+
+body.qv-public-body .ticket-picks-cell,
+body:not(.qv-admin-body) .ticket-picks-cell {
+    min-width: 320px;
+}
+
+body.qv-public-body .ticket-picks-list,
+body:not(.qv-admin-body) .ticket-picks-list {
+    display: grid;
+    gap: 0.7rem;
+}
+
+body.qv-public-body .ticket-picks-fallback,
+body:not(.qv-admin-body) .ticket-picks-fallback {
+    padding: 0.9rem 1rem;
+    border-radius: 16px;
+    background: #f8fafc;
+    color: #475569;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+body.qv-public-body .ticket-pick-item,
+body:not(.qv-admin-body) .ticket-pick-item {
+    padding: 0.85rem;
+    border-radius: 18px;
+    background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.05), transparent 8rem),
+        linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow:
+        0 10px 24px rgba(15, 23, 42, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+body.qv-public-body .ticket-pick-teams,
+body:not(.qv-admin-body) .ticket-pick-teams {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 0.6rem;
+    align-items: center;
+}
+
+body.qv-public-body .ticket-pick-team,
+body:not(.qv-admin-body) .ticket-pick-team {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+body.qv-public-body .ticket-pick-team img,
+body:not(.qv-admin-body) .ticket-pick-team img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    border-radius: 999px;
+    background: #ffffff;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.10);
+    flex: 0 0 24px;
+}
+
+body.qv-public-body .ticket-pick-team span,
+body:not(.qv-admin-body) .ticket-pick-team span {
+    color: #0f172a;
+    font-size: 0.8rem;
+    font-weight: 850;
+    line-height: 1.2;
+    min-width: 0;
+    word-break: break-word;
+}
+
+body.qv-public-body .ticket-pick-team--away,
+body:not(.qv-admin-body) .ticket-pick-team--away {
+    justify-content: flex-end;
+    text-align: right;
+}
+
+body.qv-public-body .ticket-pick-vs,
+body:not(.qv-admin-body) .ticket-pick-vs {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    color: #334155;
+    font-size: 0.72rem;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+body.qv-public-body .ticket-pick-footer,
+body:not(.qv-admin-body) .ticket-pick-footer {
+    margin-top: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+}
+
+body.qv-public-body .ticket-pick-badge,
+body:not(.qv-admin-body) .ticket-pick-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 0.5rem 0.8rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 950;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+body.qv-public-body .ticket-pick-badge--local,
+body:not(.qv-admin-body) .ticket-pick-badge--local {
+    background: rgba(34, 197, 94, 0.12);
+    color: #15803d;
+}
+
+body.qv-public-body .ticket-pick-badge--empate,
+body:not(.qv-admin-body) .ticket-pick-badge--empate {
+    background: rgba(245, 158, 11, 0.14);
+    color: #b45309;
+}
+
+body.qv-public-body .ticket-pick-badge--visita,
+body:not(.qv-admin-body) .ticket-pick-badge--visita {
+    background: rgba(239, 68, 68, 0.12);
+    color: #b91c1c;
+}
+
+body.qv-public-body .ticket-pick-badge--default,
+body:not(.qv-admin-body) .ticket-pick-badge--default {
+    background: rgba(148, 163, 184, 0.14);
+    color: #475569;
+}
+
+body.qv-public-body .ticket-pick-match-meta,
+body:not(.qv-admin-body) .ticket-pick-match-meta {
+    color: #64748b;
+    font-size: 0.68rem;
+    font-weight: 800;
+    line-height: 1.3;
+    text-align: right;
+}
+
+body.qv-public-body .btn-delete-row,
+body:not(.qv-admin-body) .btn-delete-row {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 14px !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.24), transparent 5rem),
+        linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 12px 24px rgba(220, 38, 38, 0.20);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+body.qv-public-body .btn-delete-row:hover,
+body:not(.qv-admin-body) .btn-delete-row:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 16px 30px rgba(220, 38, 38, 0.26);
+}
+
+/* =========================
+   MOBILE · BETTING APP FEEL
+   ========================= */
+@media (max-width: 768px) {
+    body.qv-public-body .ticket-picks-cell,
+    body:not(.qv-admin-body) .ticket-picks-cell {
+        min-width: 0;
+    }
+
+    body.qv-public-body .ch-summary-table tbody td:nth-child(4),
+    body:not(.qv-admin-body) .ch-summary-table tbody td:nth-child(4) {
+        padding: 0 !important;
+        background: transparent !important;
+        border: 0 !important;
+    }
+
+    body.qv-public-body .ticket-picks-list,
+    body:not(.qv-admin-body) .ticket-picks-list {
+        gap: 0.55rem;
+    }
+
+    body.qv-public-body .ticket-pick-item,
+    body:not(.qv-admin-body) .ticket-pick-item {
+        padding: 0.78rem;
+        border-radius: 18px;
+        background:
+            radial-gradient(circle at top left, rgba(37, 99, 235, 0.06), transparent 8rem),
+            linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    }
+
+    body.qv-public-body .ticket-pick-teams,
+    body:not(.qv-admin-body) .ticket-pick-teams {
+        grid-template-columns: 1fr;
+        gap: 0.45rem;
+    }
+
+    body.qv-public-body .ticket-pick-team,
+    body:not(.qv-admin-body) .ticket-pick-team {
+        justify-content: flex-start;
+        text-align: left;
+        padding: 0.55rem 0.7rem;
+        border-radius: 14px;
+        background: rgba(15, 23, 42, 0.04);
+    }
+
+    body.qv-public-body .ticket-pick-team--away,
+    body:not(.qv-admin-body) .ticket-pick-team--away {
+        justify-content: flex-start;
+        text-align: left;
+    }
+
+    body.qv-public-body .ticket-pick-team span,
+    body:not(.qv-admin-body) .ticket-pick-team span {
+        font-size: 0.78rem;
+    }
+
+    body.qv-public-body .ticket-pick-vs,
+    body:not(.qv-admin-body) .ticket-pick-vs {
+        justify-self: center;
+        min-width: 42px;
+        height: 28px;
+        padding: 0 0.55rem;
+        border-radius: 999px;
+        font-size: 0.62rem;
+        background: #0f172a;
+        color: #ffffff;
+    }
+
+    body.qv-public-body .ticket-pick-footer,
+    body:not(.qv-admin-body) .ticket-pick-footer {
+        margin-top: 0.6rem;
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.45rem;
+    }
+
+    body.qv-public-body .ticket-pick-badge,
+    body:not(.qv-admin-body) .ticket-pick-badge {
+        min-height: 32px;
+        font-size: 0.68rem;
+        padding: 0.45rem 0.75rem;
+    }
+
+    body.qv-public-body .ticket-pick-match-meta,
+    body:not(.qv-admin-body) .ticket-pick-match-meta {
+        text-align: left;
+        font-size: 0.66rem;
+    }
+
+    body.qv-public-body .btn-delete-row,
+    body:not(.qv-admin-body) .btn-delete-row {
+        width: 40px !important;
+        height: 40px !important;
+        min-width: 40px !important;
+        min-height: 40px !important;
+        border-radius: 13px !important;
+    }
+}
+
+@media (max-width: 390px) {
+    body.qv-public-body .ticket-pick-item,
+    body:not(.qv-admin-body) .ticket-pick-item {
+        padding: 0.72rem;
+    }
+
+    body.qv-public-body .ticket-pick-team,
+    body:not(.qv-admin-body) .ticket-pick-team {
+        padding: 0.5rem 0.62rem;
+    }
+
+    body.qv-public-body .ticket-pick-team img,
+    body:not(.qv-admin-body) .ticket-pick-team img {
+        width: 22px;
+        height: 22px;
+        flex-basis: 22px;
+    }
+
+    body.qv-public-body .ticket-pick-team span,
+    body:not(.qv-admin-body) .ticket-pick-team span {
+        font-size: 0.74rem;
+    }
+
+    body.qv-public-body .ticket-pick-match-meta,
+    body:not(.qv-admin-body) .ticket-pick-match-meta {
+        font-size: 0.62rem;
+    }
+}
+
+/* =====================================================
+   ETAPA 5 · MICROINTERACCIONES TUS QUINIELAS PREMIUM
+   ===================================================== */
+
+/* Entrada de card al agregar */
+body.qv-public-body .ticket-summary-row--enter,
+body:not(.qv-admin-body) .ticket-summary-row--enter {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+}
+
+body.qv-public-body .ticket-summary-row--enter.is-visible,
+body:not(.qv-admin-body) .ticket-summary-row--enter.is-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    transition:
+        opacity 280ms ease,
+        transform 360ms cubic-bezier(.2, .85, .2, 1);
+}
+
+/* Salida al eliminar */
+body.qv-public-body .ticket-summary-row--removing,
+body:not(.qv-admin-body) .ticket-summary-row--removing {
+    opacity: 0 !important;
+    transform: translateX(18px) scale(0.96) !important;
+    filter: blur(1px);
+    transition:
+        opacity 180ms ease,
+        transform 220ms ease,
+        filter 220ms ease;
+}
+
+/* Animación del total y contador */
+body.qv-public-body .qv-total-pop,
+body:not(.qv-admin-body) .qv-total-pop {
+    animation: qvTotalPop 420ms cubic-bezier(.2, .85, .2, 1);
+}
+
+@keyframes qvTotalPop {
+    0% {
+        transform: scale(1);
+    }
+
+    38% {
+        transform: scale(1.14);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Card completa con look tipo app de apuestas */
+body.qv-public-body .ch-ticket-summary-card,
+body:not(.qv-admin-body) .ch-ticket-summary-card {
+    isolation: isolate;
+}
+
+body.qv-public-body .ch-ticket-summary-card::after,
+body:not(.qv-admin-body) .ch-ticket-summary-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 20% 0%, rgba(0, 98, 255, 0.12), transparent 14rem),
+        radial-gradient(circle at 85% 5%, rgba(255, 193, 7, 0.14), transparent 13rem);
+}
+
+/* Header más cercano a betting app */
+body.qv-public-body .ch-ticket-summary-card .card-header,
+body:not(.qv-admin-body) .ch-ticket-summary-card .card-header {
+    position: relative;
+    background:
+        radial-gradient(circle at top left, rgba(0, 98, 255, 0.08), transparent 13rem),
+        rgba(255, 255, 255, 0.94) !important;
+}
+
+body.qv-public-body .ch-ticket-summary-card .card-header h5,
+body:not(.qv-admin-body) .ch-ticket-summary-card .card-header h5 {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 0.4rem 0.72rem;
+    border-radius: 999px;
+    background: rgba(2, 8, 23, 0.04);
+}
+
+/* Estado vacío premium */
+body.qv-public-body .ch-empty-state,
+body:not(.qv-admin-body) .ch-empty-state {
+    position: relative;
+    margin: 0.85rem;
+    padding: 2rem 1rem !important;
+    border-radius: 24px !important;
+    background:
+        radial-gradient(circle at top, rgba(0, 98, 255, 0.06), transparent 15rem),
+        linear-gradient(180deg, #ffffff 0%, #f8fbff 100%) !important;
+    border: 1px dashed rgba(37, 99, 235, 0.22) !important;
+    color: transparent !important;
+    overflow: hidden;
+}
+
+body.qv-public-body .ch-empty-state::before,
+body:not(.qv-admin-body) .ch-empty-state::before {
+    content: "🎟️";
+    display: block;
+    margin-bottom: 0.45rem;
+    color: #0f172a;
+    font-size: 1.6rem !important;
+    line-height: 1;
+}
+
+body.qv-public-body .ch-empty-state::after,
+body:not(.qv-admin-body) .ch-empty-state::after {
+    content: "Aún no has agregado ninguna quiniela";
+    display: block;
+    color: #64748b;
+    font-size: 0.9rem;
+    font-weight: 800;
+    line-height: 1.25;
+}
+
+/* Total footer más premium */
+body.qv-public-body .ch-ticket-summary-card .card-footer,
+body:not(.qv-admin-body) .ch-ticket-summary-card .card-footer {
+    position: relative;
+    overflow: hidden;
+}
+
+body.qv-public-body .ch-ticket-summary-card .card-footer::before,
+body:not(.qv-admin-body) .ch-ticket-summary-card .card-footer::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(
+            120deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.18) 42%,
+            transparent 68%
+        );
+    transform: translateX(-120%);
+    animation: qvFooterShine 3.8s ease-in-out infinite;
+}
+
+@keyframes qvFooterShine {
+    0%, 62% {
+        transform: translateX(-120%);
+    }
+
+    100% {
+        transform: translateX(120%);
+    }
+}
+
+body.qv-public-body .ch-ticket-summary-card .card-footer > *,
+body:not(.qv-admin-body) .ch-ticket-summary-card .card-footer > * {
+    position: relative;
+    z-index: 2;
+}
+
+/* Valor tipo chip premium en mobile cards */
+@media (max-width: 768px) {
+    body.qv-public-body .ch-summary-table tbody td:nth-child(5),
+    body:not(.qv-admin-body) .ch-summary-table tbody td:nth-child(5) {
+        background:
+            radial-gradient(circle at top left, rgba(34, 197, 94, 0.18), transparent 5rem),
+            linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%) !important;
+        color: #15803d !important;
+        border: 1px solid rgba(34, 197, 94, 0.18);
+    }
+
+    body.qv-public-body .ch-summary-table tbody td:nth-child(5)::before,
+    body:not(.qv-admin-body) .ch-summary-table tbody td:nth-child(5)::before {
+        content: "Valor";
+        display: block;
+        margin-bottom: 0.18rem;
+        color: #16a34a;
+        font-size: 0.58rem;
+        font-weight: 900;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+
+    /* Botón eliminar como acción flotante inferior */
+    body.qv-public-body .ch-summary-table tbody td:nth-child(6),
+    body:not(.qv-admin-body) .ch-summary-table tbody td:nth-child(6) {
+        justify-self: start;
+    }
+
+    body.qv-public-body .btn-delete-row,
+    body:not(.qv-admin-body) .btn-delete-row {
+        position: relative;
+    }
+
+    body.qv-public-body .btn-delete-row::after,
+    body:not(.qv-admin-body) .btn-delete-row::after {
+        content: "Eliminar";
+        position: absolute;
+        left: calc(100% + 0.55rem);
+        top: 50%;
+        transform: translateY(-50%);
+        color: #dc2626;
+        font-size: 0.74rem;
+        font-weight: 900;
+        white-space: nowrap;
+    }
+
+    /* Card hover/touch feel */
+    body.qv-public-body .ch-summary-table tbody tr,
+    body:not(.qv-admin-body) .ch-summary-table tbody tr {
+        transition:
+            transform 180ms ease,
+            box-shadow 180ms ease,
+            border-color 180ms ease;
+    }
+
+    body.qv-public-body .ch-summary-table tbody tr:active,
+    body:not(.qv-admin-body) .ch-summary-table tbody tr:active {
+        transform: scale(0.985);
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.10);
+        border-color: rgba(37, 99, 235, 0.22);
+    }
+
+    /* Cada partido dentro de la quiniela como mini apuesta */
+    body.qv-public-body .ticket-pick-item,
+    body:not(.qv-admin-body) .ticket-pick-item {
+        position: relative;
+        overflow: hidden;
+    }
+
+    body.qv-public-body .ticket-pick-item::before,
+    body:not(.qv-admin-body) .ticket-pick-item::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: linear-gradient(180deg, #2563eb, #f59e0b, #ef4444);
+        opacity: 0.9;
+    }
+
+    body.qv-public-body .ticket-pick-badge,
+    body:not(.qv-admin-body) .ticket-pick-badge {
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.36);
+    }
+}
+
+/* =====================================================
+   HOME · TOGGLE DEL TICKET
+   ===================================================== */
+
+body.qv-public-body .qv-ticket-toolbar,
+body:not(.qv-admin-body) .qv-ticket-toolbar {
+    display: flex;
+    justify-content: center;
+    margin: 0.35rem auto 0.9rem;
+    padding: 0 0.85rem;
+}
+
+body.qv-public-body .qv-ticket-toggle-btn,
+body:not(.qv-admin-body) .qv-ticket-toggle-btn {
+    min-height: 46px;
+    padding: 0.75rem 1rem;
+    border: 0 !important;
+    border-radius: 999px !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.25), transparent 6rem),
+        linear-gradient(135deg, #06142f 0%, #0a2b64 100%) !important;
+    color: #ffffff !important;
+    font-size: 0.88rem;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    box-shadow:
+        0 16px 34px rgba(6, 20, 47, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+body.qv-public-body .qv-ticket-toggle-btn:hover,
+body:not(.qv-admin-body) .qv-ticket-toggle-btn:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        0 20px 38px rgba(6, 20, 47, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+body.qv-public-body .qv-ticket-toggle-btn i,
+body:not(.qv-admin-body) .qv-ticket-toggle-btn i {
+    font-size: 0.95rem;
+}
+
+body.qv-public-body .qv-ticket-panel,
+body:not(.qv-admin-body) .qv-ticket-panel {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition:
+        grid-template-rows 0.34s cubic-bezier(.2, .85, .2, 1),
+        opacity 0.26s ease;
+    opacity: 1;
+}
+
+body.qv-public-body .qv-ticket-panel:not(.is-open),
+body:not(.qv-admin-body) .qv-ticket-panel:not(.is-open) {
+    grid-template-rows: 0fr;
+    opacity: 0.92;
+}
+
+body.qv-public-body .qv-ticket-panel__inner,
+body:not(.qv-admin-body) .qv-ticket-panel__inner {
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* =====================================================
+   INFO DE PARTIDO · FECHA / HORA MÁS LEGIBLE
+   ===================================================== */
+
+body.qv-public-body .cell-match-info,
+body:not(.qv-admin-body) .cell-match-info {
+    min-width: 104px;
+    background:
+        linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%) !important;
+    border-left: 1px solid rgba(37, 99, 235, 0.10) !important;
+}
+
+body.qv-public-body .cell-match-info-inner,
+body:not(.qv-admin-body) .cell-match-info-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.32rem;
+    padding: 0.28rem 0.1rem;
+}
+
+body.qv-public-body .match-date,
+body.qv-public-body .match-time,
+body:not(.qv-admin-body) .match-date,
+body:not(.qv-admin-body) .match-time {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.28rem;
+    padding: 0.32rem 0.42rem;
+    border-radius: 999px;
+    text-align: center;
+    line-height: 1.05;
+    white-space: nowrap;
+}
+
+body.qv-public-body .match-date,
+body:not(.qv-admin-body) .match-date {
+    background: rgba(255, 255, 255, 0.95);
+    color: #334155;
+    font-weight: 950;
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+body.qv-public-body .match-time,
+body:not(.qv-admin-body) .match-time {
+    background: rgba(0, 98, 255, 0.10);
+    color: #003ea8;
+    font-weight: 950;
+    box-shadow: inset 0 0 0 1px rgba(0, 98, 255, 0.10);
+}
+
+body.qv-public-body .match-date i,
+body.qv-public-body .match-time i,
+body:not(.qv-admin-body) .match-date i,
+body:not(.qv-admin-body) .match-time i {
+    font-size: 0.72rem;
+    flex: 0 0 auto;
+}
+
+body.qv-public-body .match-date span:last-child,
+body.qv-public-body .match-time span:last-child,
+body:not(.qv-admin-body) .match-date span:last-child,
+body:not(.qv-admin-body) .match-time span:last-child {
+    display: inline-block;
+    min-width: 0;
+}
+
+body.qv-public-body .match-league-badge,
+body:not(.qv-admin-body) .match-league-badge {
+    min-width: 58px;
+    padding: 0.2rem 0.45rem !important;
+    border-radius: 999px;
+    background: rgba(0, 98, 255, 0.10) !important;
+    color: #003ea8 !important;
+    border: 0 !important;
+    font-size: 0.62rem !important;
+    font-weight: 950;
+    letter-spacing: 0.04em;
+}
+
+/* =====================================================
+   MANITO GUÍA · MÁS PRECISA
+   ===================================================== */
+
+#qv-coach-overlay {
+    transition:
+        transform 320ms cubic-bezier(.2, .85, .2, 1),
+        opacity 180ms ease;
+}
+
+#qv-coach-overlay .qv-coach-hand {
+    width: 28px;
+    height: 28px;
+    font-size: 0.98rem;
+    transform: translate(-52%, -100%);
+    box-shadow:
+        0 8px 20px rgba(15, 23, 42, 0.16),
+        0 0 0 4px rgba(239, 68, 68, 0.08);
+}
+
+#qv-coach-overlay .qv-coach-hand::after {
+    inset: -6px;
+}
+
+#qv-coach-overlay .qv-coach-tip {
+    transform: translate(-10%, -170%);
+    max-width: 160px;
+    padding: 0.4rem 0.65rem;
+    font-size: 0.66rem;
+    white-space: nowrap;
+}
+
+#qv-coach-overlay.is-pick-target .qv-coach-hand {
+    transform: translate(-66%, -110%) rotate(-7deg);
+}
+
+#qv-coach-overlay.is-pick-target .qv-coach-tip {
+    transform: translate(-8%, -182%);
+}
+
+/* =====================================================
+   MOBILE · AJUSTES FINOS
+   ===================================================== */
+@media (max-width: 768px) {
+    body.qv-public-body .qv-ticket-toolbar,
+    body:not(.qv-admin-body) .qv-ticket-toolbar {
+        margin: 0.15rem auto 0.7rem;
+        padding: 0 0.6rem;
+    }
+
+    body.qv-public-body .qv-ticket-toggle-btn,
+    body:not(.qv-admin-body) .qv-ticket-toggle-btn {
+        width: 100%;
+        max-width: 320px;
+        min-height: 44px;
+        padding: 0.72rem 0.95rem;
+        font-size: 0.82rem;
+    }
+
+    body.qv-public-body .ch-table tbody tr,
+    body:not(.qv-admin-body) .ch-table tbody tr {
+        grid-template-columns: 38px minmax(0, 1fr) 38px minmax(0, 1fr) 38px 68px;
+        gap: 5px;
+    }
+
+    body.qv-public-body .cell-match-info,
+    body:not(.qv-admin-body) .cell-match-info {
+        width: 68px !important;
+        min-width: 68px !important;
+        padding-left: 4px !important;
+        border-left: 1px dashed rgba(15, 23, 42, 0.16) !important;
+    }
+
+    body.qv-public-body .cell-match-info-inner,
+    body:not(.qv-admin-body) .cell-match-info-inner {
+        gap: 0.18rem;
+        padding: 0.18rem 0;
+    }
+
+    body.qv-public-body .cell-match-info .match-date,
+    body.qv-public-body .cell-match-info .match-time,
+    body:not(.qv-admin-body) .cell-match-info .match-date,
+    body:not(.qv-admin-body) .cell-match-info .match-time {
+        padding: 0.22rem 0.2rem;
+        font-size: 0.53rem;
+        line-height: 1;
+        border-radius: 12px;
+        white-space: normal;
+        flex-direction: column;
+        gap: 0.06rem;
+    }
+
+    body.qv-public-body .cell-match-info .match-date i,
+    body.qv-public-body .cell-match-info .match-time i,
+    body:not(.qv-admin-body) .cell-match-info .match-date i,
+    body:not(.qv-admin-body) .cell-match-info .match-time i {
+        font-size: 0.52rem;
+    }
+
+    body.qv-public-body .cell-match-info .match-league-badge,
+    body:not(.qv-admin-body) .cell-match-info .match-league-badge {
+        min-width: 44px;
+        font-size: 0.48rem !important;
+        padding: 0.16rem 0.22rem !important;
+        margin-top: 0 !important;
+    }
+
+    #qv-coach-overlay .qv-coach-hand {
+        width: 24px;
+        height: 24px;
+        font-size: 0.85rem;
+    }
+
+    #qv-coach-overlay .qv-coach-tip {
+        max-width: 132px;
+        font-size: 0.60rem;
+        padding: 0.34rem 0.54rem;
+    }
+}
+
+@media (max-width: 390px) {
+    body.qv-public-body .ch-table tbody tr,
+    body:not(.qv-admin-body) .ch-table tbody tr {
+        grid-template-columns: 34px minmax(0, 1fr) 34px minmax(0, 1fr) 34px 62px;
+        gap: 4px;
+        padding: 9px 6px;
+    }
+
+    body.qv-public-body .cell-match-info,
+    body:not(.qv-admin-body) .cell-match-info {
+        width: 62px !important;
+        min-width: 62px !important;
+    }
+
+    body.qv-public-body .cell-match-info .match-date,
+    body.qv-public-body .cell-match-info .match-time,
+    body:not(.qv-admin-body) .cell-match-info .match-date,
+    body:not(.qv-admin-body) .cell-match-info .match-time {
+        font-size: 0.48rem;
+    }
+}
+/* =====================================================
+   TUS QUINIELAS · ABRIR / CERRAR RESUMEN
+   ===================================================== */
+
+body.qv-public-body .qv-summary-header,
+body:not(.qv-admin-body) .qv-summary-header {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.85rem;
+    text-align: left !important;
+    padding: 1rem 1rem !important;
+}
+
+body.qv-public-body .qv-summary-header__title,
+body:not(.qv-admin-body) .qv-summary-header__title {
+    min-width: 0;
+}
+
+body.qv-public-body .qv-summary-header__title h5,
+body:not(.qv-admin-body) .qv-summary-header__title h5 {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: #06142f !important;
+    font-size: 1rem !important;
+    font-weight: 950 !important;
+    letter-spacing: -0.03em;
+}
+
+body.qv-public-body .qv-summary-header__title small,
+body:not(.qv-admin-body) .qv-summary-header__title small {
+    display: block;
+    margin-top: 0.15rem;
+    color: #64748b;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+body.qv-public-body .qv-summary-toggle,
+body:not(.qv-admin-body) .qv-summary-toggle {
+    flex: 0 0 auto;
+    min-height: 38px;
+    padding: 0.52rem 0.75rem;
+    border: 0;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.26), transparent 5rem),
+        linear-gradient(135deg, #06142f 0%, #0f2b66 100%);
+    color: #ffffff;
+    font-size: 0.74rem;
+    font-weight: 900;
+    box-shadow: 0 10px 22px rgba(6, 20, 47, 0.16);
+}
+
+body.qv-public-body .qv-summary-toggle i,
+body:not(.qv-admin-body) .qv-summary-toggle i {
+    font-size: 0.82rem;
+}
+
+body.qv-public-body .qv-summary-content,
+body:not(.qv-admin-body) .qv-summary-content {
+    display: grid;
+    grid-template-rows: 1fr;
+    opacity: 1;
+    transition:
+        grid-template-rows 0.32s cubic-bezier(.2, .85, .2, 1),
+        opacity 0.22s ease;
+}
+
+body.qv-public-body .qv-summary-content:not(.is-open),
+body:not(.qv-admin-body) .qv-summary-content:not(.is-open) {
+    grid-template-rows: 0fr;
+    opacity: 0;
+}
+
+body.qv-public-body .qv-summary-content__inner,
+body:not(.qv-admin-body) .qv-summary-content__inner {
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* Mantener footer total visible aunque el detalle esté cerrado */
+body.qv-public-body .ch-ticket-summary-card .card-footer,
+body:not(.qv-admin-body) .ch-ticket-summary-card .card-footer {
+    position: relative;
+    z-index: 3;
+}
+
+/* =====================================================
+   COACH / MANITO · GRANDE, TRANSLUCIDA Y PRECISA
+   ===================================================== */
+
+#qv-coach-overlay {
+    transition:
+        transform 300ms cubic-bezier(.2, .85, .2, 1),
+        opacity 180ms ease;
+}
+
+#qv-coach-overlay .qv-coach-hand {
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    transform: translate(-58%, -108%) rotate(-8deg);
+    background:
+        radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.74) 0%, rgba(255, 247, 237, 0.58) 42%, rgba(254, 215, 170, 0.50) 100%);
+    color: rgba(17, 24, 39, 0.72);
+    font-size: 1.45rem;
+    box-shadow:
+        0 12px 28px rgba(15, 23, 42, 0.16),
+        0 0 0 7px rgba(239, 68, 68, 0.07);
+    backdrop-filter: blur(8px);
+    opacity: 0.72;
+    animation: qvCoachTapLarge 1.12s ease-in-out infinite;
+}
+
+#qv-coach-overlay .qv-coach-hand::after {
+    inset: -9px;
+    border: 2px solid rgba(239, 68, 68, 0.18);
+}
+
+#qv-coach-overlay .qv-coach-tip {
+    transform: translate(-4%, -178%);
+    max-width: 150px;
+    padding: 0.38rem 0.58rem;
+    border-radius: 999px;
+    background: rgba(2, 8, 23, 0.58);
+    color: rgba(255, 255, 255, 0.86);
+    font-size: 0.62rem;
+    font-weight: 850;
+    line-height: 1.08;
+    white-space: nowrap;
+    box-shadow:
+        0 10px 22px rgba(15, 23, 42, 0.12),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(10px);
+}
+
+#qv-coach-overlay.is-pick-target .qv-coach-hand {
+    transform: translate(-70%, -112%) rotate(-10deg);
+}
+
+#qv-coach-overlay.is-pick-target .qv-coach-tip {
+    transform: translate(-8%, -188%);
+}
+
+@keyframes qvCoachTapLarge {
+    0%, 100% {
+        transform: translate(-58%, -108%) rotate(-8deg) scale(1);
+    }
+
+    45% {
+        transform: translate(-58%, -96%) rotate(-2deg) scale(0.96);
+    }
+
+    68% {
+        transform: translate(-58%, -114%) rotate(-8deg) scale(1.04);
+    }
+}
+
+#qv-coach-overlay.is-pick-target .qv-coach-hand {
+    animation-name: qvCoachTapPickLarge;
+}
+
+@keyframes qvCoachTapPickLarge {
+    0%, 100% {
+        transform: translate(-70%, -112%) rotate(-10deg) scale(1);
+    }
+
+    45% {
+        transform: translate(-70%, -98%) rotate(-4deg) scale(0.96);
+    }
+
+    68% {
+        transform: translate(-70%, -118%) rotate(-10deg) scale(1.04);
+    }
+}
+
+@media (max-width: 768px) {
+    body.qv-public-body .qv-summary-header,
+    body:not(.qv-admin-body) .qv-summary-header {
+        padding: 0.9rem 0.85rem !important;
+    }
+
+    body.qv-public-body .qv-summary-header__title h5,
+    body:not(.qv-admin-body) .qv-summary-header__title h5 {
+        font-size: 0.94rem !important;
+    }
+
+    body.qv-public-body .qv-summary-header__title small,
+    body:not(.qv-admin-body) .qv-summary-header__title small {
+        font-size: 0.66rem;
+    }
+
+    body.qv-public-body .qv-summary-toggle,
+    body:not(.qv-admin-body) .qv-summary-toggle {
+        min-height: 34px;
+        padding: 0.48rem 0.62rem;
+        font-size: 0.68rem;
+    }
+
+    #qv-coach-overlay .qv-coach-hand {
+        width: 38px;
+        height: 38px;
+        font-size: 1.25rem;
+        opacity: 0.70;
+    }
+
+    #qv-coach-overlay .qv-coach-tip {
+        max-width: 128px;
+        font-size: 0.58rem;
+        padding: 0.32rem 0.5rem;
+        opacity: 0.82;
+    }
+}
+
+/* =====================================================
+   COACH · DETECCION REAL DE ELEMENTOS
+   ===================================================== */
+
+#qv-coach-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 99999;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate3d(-9999px, -9999px, 0);
+    transition:
+        transform 260ms cubic-bezier(.2, .85, .2, 1),
+        opacity 160ms ease;
+}
+
+#qv-coach-overlay.is-active {
+    opacity: 1;
+}
+
+#qv-coach-overlay.is-done {
+    display: none !important;
+}
+
+#qv-coach-overlay .qv-coach-hand {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+        radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.78), rgba(255, 237, 213, 0.58));
+    color: rgba(15, 23, 42, 0.72);
+    font-size: 1.55rem;
+    line-height: 1;
+    opacity: 0.78;
+    backdrop-filter: blur(8px);
+    box-shadow:
+        0 14px 30px rgba(15, 23, 42, 0.14),
+        0 0 0 7px rgba(239, 68, 68, 0.07);
+    animation: qvCoachDetectTap 1.1s ease-in-out infinite;
+}
+
+/* Para picks: el dedo cae sobre el botón */
+#qv-coach-overlay.is-pick-target .qv-coach-hand {
+    transform: translate(-50%, -108%) rotate(-7deg);
+}
+
+/* Para inputs y botones grandes */
+#qv-coach-overlay.is-input-target .qv-coach-hand,
+#qv-coach-overlay.is-button-target .qv-coach-hand {
+    transform: translate(-50%, -108%) rotate(-7deg);
+}
+
+#qv-coach-overlay .qv-coach-hand::after {
+    content: "";
+    position: absolute;
+    inset: -8px;
+    border-radius: inherit;
+    border: 2px solid rgba(239, 68, 68, 0.18);
+    animation: qvCoachDetectRing 1.1s ease-out infinite;
+}
+
+#qv-coach-overlay .qv-coach-tip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: translate(-8%, -210%);
+    max-width: 150px;
+    padding: 0.36rem 0.56rem;
+    border-radius: 999px;
+    background: rgba(2, 8, 23, 0.54);
+    color: rgba(255, 255, 255, 0.86);
+    font-size: 0.61rem;
+    font-weight: 850;
+    line-height: 1.08;
+    white-space: nowrap;
+    box-shadow:
+        0 10px 22px rgba(15, 23, 42, 0.12),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(10px);
+}
+
+/* Target resaltado exacto */
+body.qv-public-body .qv-coach-current-target,
+body:not(.qv-admin-body) .qv-coach-current-target {
+    outline: 2px solid rgba(239, 68, 68, 0.28) !important;
+    outline-offset: 3px;
+    box-shadow:
+        0 0 0 6px rgba(239, 68, 68, 0.08),
+        0 12px 24px rgba(239, 68, 68, 0.16) !important;
+}
+
+@keyframes qvCoachDetectTap {
+    0%, 100% {
+        margin-top: 0;
+        transform: translate(-50%, -108%) rotate(-7deg) scale(1);
+    }
+
+    45% {
+        margin-top: 8px;
+        transform: translate(-50%, -108%) rotate(-2deg) scale(0.96);
+    }
+
+    70% {
+        margin-top: -2px;
+        transform: translate(-50%, -108%) rotate(-7deg) scale(1.03);
+    }
+}
+
+@keyframes qvCoachDetectRing {
+    0% {
+        opacity: 0.65;
+        transform: scale(0.82);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(1.34);
+    }
+}
+
+@media (max-width: 768px) {
+    #qv-coach-overlay .qv-coach-hand {
+        width: 42px;
+        height: 42px;
+        font-size: 1.45rem;
+        opacity: 0.74;
+    }
+
+    #qv-coach-overlay .qv-coach-tip {
+        max-width: 132px;
+        font-size: 0.56rem;
+        padding: 0.31rem 0.48rem;
+        opacity: 0.82;
+    }
+
+    body.qv-public-body .qv-coach-current-target,
+    body:not(.qv-admin-body) .qv-coach-current-target {
+        outline-offset: 2px;
+        box-shadow:
+            0 0 0 5px rgba(239, 68, 68, 0.07),
+            0 10px 20px rgba(239, 68, 68, 0.12) !important;
+    }
+}
