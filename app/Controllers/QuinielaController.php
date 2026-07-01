@@ -720,141 +720,208 @@ class QuinielaController extends BaseController
     }
 
     public function ranking(Request $request, Response $response): void
-    {
-        $roundModel = new RoundModel();
-        $leagueModel = new LeagueModel();
-        $matchModel = new MatchModel();
-        $ticketModel = new TicketModel();
+{
+    $roundModel = new RoundModel();
+    $leagueModel = new LeagueModel();
+    $matchModel = new MatchModel();
+    $ticketModel = new TicketModel();
 
-        $activeLeagues = $leagueModel->getAllActive();
+    $activeLeagues = $leagueModel->getAllActive();
 
-        $selectedLeagueData = null;
-        $leagueSlug = isset($_GET['league']) && $_GET['league'] !== ''
-            ? trim((string)$_GET['league'])
-            : null;
+    $selectedLeagueData = null;
+    $leagueSlug = isset($_GET['league']) && $_GET['league'] !== ''
+        ? trim((string)$_GET['league'])
+        : null;
 
-        if ($leagueSlug && method_exists($leagueModel, 'findBySlug')) {
-            $selectedLeagueData = $leagueModel->findBySlug($leagueSlug);
-        }
+    if ($leagueSlug && method_exists($leagueModel, 'findBySlug')) {
+        $selectedLeagueData = $leagueModel->findBySlug($leagueSlug);
+    }
 
-        if (!$selectedLeagueData && $activeLeagues !== []) {
-            $selectedLeagueData = $activeLeagues[0];
-            $leagueSlug = (string)$selectedLeagueData['slug'];
-        }
+    if (!$selectedLeagueData && $activeLeagues !== []) {
+        $selectedLeagueData = $activeLeagues[0];
+        $leagueSlug = (string)$selectedLeagueData['slug'];
+    }
 
-        $availableRounds = [];
+    $availableRounds = [];
 
-        if ($selectedLeagueData && $leagueSlug) {
-            $availableRounds = $roundModel->getRankingRounds((string)$leagueSlug);
-        }
+    if ($selectedLeagueData && $leagueSlug) {
+        $availableRounds = $roundModel->getRankingRounds((string)$leagueSlug);
+    }
 
-        $currentRound = null;
+    $statusFilter = strtoupper(trim((string)($_GET['status'] ?? 'all')));
 
-        if (isset($_GET['round_id']) && (int)$_GET['round_id'] > 0) {
-            $requestedRound = $roundModel->findById((int)$_GET['round_id']);
+    $allowedStatuses = [
+        'all',
+        'OPEN',
+        'CLOSED',
+        'FINISHED',
+    ];
 
+    if (!in_array($statusFilter, $allowedStatuses, true)) {
+        $statusFilter = 'all';
+    }
+
+    if ($statusFilter !== 'all') {
+        $availableRounds = array_values(array_filter(
+            $availableRounds,
+            static fn (array $round): bool => strtoupper((string)($round['status'] ?? '')) === $statusFilter
+        ));
+    }
+
+    $currentRound = null;
+
+    if (isset($_GET['round_id']) && (int)$_GET['round_id'] > 0) {
+        $requestedRound = $roundModel->findById((int)$_GET['round_id']);
+
+        if (
+            $requestedRound &&
+            (!isset($selectedLeagueData['id']) ||
+                (int)$requestedRound['league_id'] === (int)$selectedLeagueData['id'])
+        ) {
             if (
-                $requestedRound &&
-                (!isset($selectedLeagueData['id']) ||
-                    (int)$requestedRound['league_id'] === (int)$selectedLeagueData['id'])
+                $statusFilter === 'all' ||
+                strtoupper((string)($requestedRound['status'] ?? '')) === $statusFilter
             ) {
                 $currentRound = $requestedRound;
             }
         }
-
-        if (!$currentRound && $availableRounds !== []) {
-            foreach ($availableRounds as $round) {
-                if (strtoupper((string)$round['status']) === 'CLOSED') {
-                    $currentRound = $round;
-                    break;
-                }
-            }
-
-            if (!$currentRound) {
-                $currentRound = $availableRounds[0];
-            }
-        }
-
-        $tickets = [];
-        $matches = [];
-        $roundId = $currentRound ? (int)$currentRound['id'] : 0;
-        $updatedAt = date('H:i');
-
-        $estimatedPrizes = [
-            'first' => 0.0,
-            'second' => 0.0,
-        ];
-
-        $geo = $_SESSION['geo'] ?? [];
-        $currencyCode = $geo['currency_code'] ?? ($_SESSION['geo_currency'] ?? 'USD');
-
-        if ($roundId > 0 && class_exists(RankingService::class)) {
-            $rankingService = new RankingService();
-
-            $summary = $this->getRankingSummaryCached($roundId);
-
-            $estimatedPrizes['first'] = (float)($summary['first_prize_total'] ?? 0.0);
-            $estimatedPrizes['second'] = (float)($summary['second_prize_total'] ?? 0.0);
-
-            $tickets = $rankingService->getRoundRanking($roundId, 'PAID');
-
-            $matches = $matchModel->getByRound($roundId);
-
-            $matches = array_values(array_filter($matches, function (array $match): bool {
-                $status = strtoupper((string)($match['status'] ?? ''));
-
-                return !in_array($status, ['CANCELLED', 'POSTPONED'], true);
-            }));
-
-            $tickets = $this->attachTicketPicksAndHits($tickets, $matches, $ticketModel);
-        }
-
-        $totalPrimero = 0;
-        $totalSegundo = 0;
-
-        if ($tickets !== []) {
-            $maxPoints = (int)($tickets[0]['points'] ?? 0);
-            $secondPoints = null;
-
-            foreach ($tickets as $ticket) {
-                $points = (int)$ticket['points'];
-
-                if ($points === $maxPoints) {
-                    $totalPrimero++;
-                    continue;
-                }
-
-                if ($secondPoints === null) {
-                    $secondPoints = $points;
-                }
-
-                if ($points === $secondPoints) {
-                    $totalSegundo++;
-                }
-            }
-        }
-
-        $metaDescription = 'Ranking en vivo Jornada ' .
-            ($currentRound['name'] ?? '') .
-            '. Sigue los resultados minuto a minuto.';
-
-        $this->render('quiniela/ranking', [
-            'pageTitle' => 'Ranking - ' . ($currentRound['name'] ?? 'General'),
-            'metaDescription' => $metaDescription,
-            'currentRound' => $currentRound,
-            'availableRounds' => $availableRounds,
-            'tickets' => $tickets,
-            'matches' => $matches,
-            'updatedAt' => $updatedAt,
-            'leagueSlug' => $leagueSlug,
-            'activeLeagues' => $activeLeagues,
-            'selectedLeagueData' => $selectedLeagueData,
-            'estimatedPrizes' => $estimatedPrizes,
-            'currencyCode' => $currencyCode,
-            'totalPrimero' => $totalPrimero,
-            'totalSegundo' => $totalSegundo,
-        ]);
     }
+
+    if (!$currentRound && $availableRounds !== []) {
+        /*
+         * Prioridad:
+         * 1. Abierta
+         * 2. Cerrada
+         * 3. Finalizada
+         * 4. Primera disponible
+         */
+        foreach (['OPEN', 'CLOSED', 'FINISHED'] as $preferredStatus) {
+            foreach ($availableRounds as $round) {
+                if (strtoupper((string)($round['status'] ?? '')) === $preferredStatus) {
+                    $currentRound = $round;
+                    break 2;
+                }
+            }
+        }
+
+        if (!$currentRound) {
+            $currentRound = $availableRounds[0];
+        }
+    }
+
+    $tickets = [];
+    $matches = [];
+    $roundId = $currentRound ? (int)$currentRound['id'] : 0;
+    $updatedAt = date('H:i');
+
+    $estimatedPrizes = [
+        'first' => 0.0,
+        'second' => 0.0,
+    ];
+
+    $geo = $_SESSION['geo'] ?? [];
+    $currencyCode = $geo['currency_code'] ?? ($_SESSION['geo_currency'] ?? 'USD');
+
+    $rankingStats = [
+        'total_tickets' => 0,
+        'total_matches' => 0,
+        'finished_matches' => 0,
+        'pending_matches' => 0,
+        'total_first' => 0,
+        'total_second' => 0,
+        'max_points' => 0,
+    ];
+
+    if ($roundId > 0 && class_exists(RankingService::class)) {
+        $rankingService = new RankingService();
+
+        $summary = $this->getRankingSummaryCached($roundId);
+
+        $estimatedPrizes['first'] = (float)($summary['first_prize_total'] ?? 0.0);
+        $estimatedPrizes['second'] = (float)($summary['second_prize_total'] ?? 0.0);
+
+        $tickets = $rankingService->getRoundRanking($roundId, 'PAID');
+
+        $matches = $matchModel->getByRound($roundId);
+
+        $matches = array_values(array_filter($matches, function (array $match): bool {
+            $status = strtoupper((string)($match['status'] ?? ''));
+
+            return !in_array($status, ['CANCELLED', 'POSTPONED'], true);
+        }));
+
+        $finishedMatches = 0;
+
+        foreach ($matches as $match) {
+            if ((string)($match['result_outcome'] ?? '') !== '') {
+                $finishedMatches++;
+            }
+        }
+
+        $tickets = $this->attachTicketPicksAndHits($tickets, $matches, $ticketModel);
+
+        $rankingStats['total_tickets'] = count($tickets);
+        $rankingStats['total_matches'] = count($matches);
+        $rankingStats['finished_matches'] = $finishedMatches;
+        $rankingStats['pending_matches'] = max(0, count($matches) - $finishedMatches);
+    }
+
+    $totalPrimero = 0;
+    $totalSegundo = 0;
+
+    if ($tickets !== []) {
+        $maxPoints = (int)($tickets[0]['points'] ?? 0);
+        $secondPoints = null;
+
+        $rankingStats['max_points'] = $maxPoints;
+
+        foreach ($tickets as $ticket) {
+            $points = (int)$ticket['points'];
+
+            if ($points === $maxPoints) {
+                $totalPrimero++;
+                continue;
+            }
+
+            if ($secondPoints === null) {
+                $secondPoints = $points;
+            }
+
+            if ($points === $secondPoints) {
+                $totalSegundo++;
+            }
+        }
+    }
+
+    $rankingStats['total_first'] = $totalPrimero;
+    $rankingStats['total_second'] = $totalSegundo;
+
+    $topTickets = array_slice($tickets, 0, 3);
+
+    $metaDescription = 'Ranking en vivo ' .
+        ($currentRound['name'] ?? 'General') .
+        '. Consulta puntos, ganadores y resultados de la quiniela.';
+
+    $this->render('quiniela/ranking', [
+        'pageTitle' => 'Ranking - ' . ($currentRound['name'] ?? 'General'),
+        'metaDescription' => $metaDescription,
+        'currentRound' => $currentRound,
+        'availableRounds' => $availableRounds,
+        'tickets' => $tickets,
+        'matches' => $matches,
+        'updatedAt' => $updatedAt,
+        'leagueSlug' => $leagueSlug,
+        'activeLeagues' => $activeLeagues,
+        'selectedLeagueData' => $selectedLeagueData,
+        'estimatedPrizes' => $estimatedPrizes,
+        'currencyCode' => $currencyCode,
+        'totalPrimero' => $totalPrimero,
+        'totalSegundo' => $totalSegundo,
+        'rankingStats' => $rankingStats,
+        'topTickets' => $topTickets,
+        'statusFilter' => $statusFilter,
+    ]);
+}
 
     private function attachTicketPicksAndHits(array $tickets, array $matches, TicketModel $ticketModel): array
     {

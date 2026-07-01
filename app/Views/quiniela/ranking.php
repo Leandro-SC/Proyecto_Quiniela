@@ -1,349 +1,882 @@
 <?php
-$totalPrimero = $totalPrimero ?? 0;
-$totalSegundo = $totalSegundo ?? 0;
+
+declare(strict_types=1);
+
+$currentRound = $currentRound ?? null;
 $tickets = $tickets ?? [];
 $matches = $matches ?? [];
-$currentRound = $currentRound ?? null;
+$updatedAt = $updatedAt ?? date('H:i');
 $estimatedPrizes = $estimatedPrizes ?? ['first' => 0, 'second' => 0];
 $currencyCode = $currencyCode ?? 'USD';
-?>
+$activeLeagues = $activeLeagues ?? [];
+$leagueSlug = $leagueSlug ?? '';
+$availableRounds = $availableRounds ?? [];
+$topTickets = $topTickets ?? array_slice($tickets, 0, 3);
+$statusFilter = $statusFilter ?? 'all';
 
-<?php
+$rankingStats = $rankingStats ?? [
+    'total_tickets' => count($tickets),
+    'total_matches' => count($matches),
+    'finished_matches' => 0,
+    'pending_matches' => 0,
+    'total_first' => $totalPrimero ?? 0,
+    'total_second' => $totalSegundo ?? 0,
+    'max_points' => 0,
+];
 
-/** @var array|null $currentRound */
-/** @var array $tickets */
-/** @var array $matches */
-/** @var string $updatedAt */
-/** @var array $estimatedPrizes */
-/** @var string $currencyCode */
-/** @var array $activeLeagues */
-/** @var string $leagueSlug */
-/** @var array|null $selectedLeagueData */
-
-$officialResults = [];
-foreach ($matches as $m) {
-    if (!empty($m['result_outcome'])) {
-        $officialResults[$m['id']] = $m['result_outcome'];
+if (!function_exists('qvRankingH')) {
+    function qvRankingH(mixed $value): string
+    {
+        return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
     }
 }
 
-// --- LÓGICA DE COLORES ---
-// Definimos una paleta de colores suaves de Bootstrap 5.3
-// Se irán rotando cada vez que cambie la cantidad de puntos.
-$colorPalette = [
-    'bg-primary-subtle text-primary-emphasis',   // Azul suave
-    'bg-success-subtle text-success-emphasis',   // Verde suave
-    'bg-warning-subtle text-warning-emphasis',   // Amarillo suave
-    'bg-danger-subtle text-danger-emphasis',     // Rojo suave
-    'bg-info-subtle text-info-emphasis',         // Cian suave
-    'bg-secondary-subtle text-secondary-emphasis', // Gris suave
-    'bg-light border text-dark'                  // Blanco/Gris muy claro
+if (!function_exists('qvRankingStatusLabel')) {
+    function qvRankingStatusLabel(mixed $status): string
+    {
+        return match (strtoupper((string)$status)) {
+            'OPEN' => 'Abierta',
+            'CLOSED' => 'Cerrada',
+            'FINISHED' => 'Finalizada',
+            default => ucfirst(strtolower((string)$status)),
+        };
+    }
+}
+
+if (!function_exists('qvRankingStatusClass')) {
+    function qvRankingStatusClass(mixed $status): string
+    {
+        return match (strtoupper((string)$status)) {
+            'OPEN' => 'is-open',
+            'CLOSED' => 'is-closed',
+            'FINISHED' => 'is-finished',
+            default => 'is-default',
+        };
+    }
+}
+
+$officialResults = [];
+
+foreach ($matches as $match) {
+    if (!empty($match['result_outcome'])) {
+        $officialResults[(int)$match['id']] = $match['result_outcome'];
+    }
+}
+
+$statusOptions = [
+    'all' => 'Todas',
+    'OPEN' => 'Abiertas',
+    'CLOSED' => 'Cerradas',
+    'FINISHED' => 'Finalizadas',
 ];
 
-$lastPoints = null;
-$colorIndex = -1; // Iniciamos en -1 para que el primer grupo sea 0
+$roundStatus = strtoupper((string)($currentRound['status'] ?? ''));
+$currentRoundName = $currentRound['custom_title'] ?? $currentRound['name'] ?? 'Ranking general';
 ?>
 
-<div class="ph-wrapper">
+<section class="qv-ranking-page">
+    <div class="container">
 
-    <div>
-        <h2 class="text-center mb-4">
-            <?= !empty($currentRound['custom_title']) ? htmlspecialchars($currentRound['custom_title']) : htmlspecialchars($currentRound['name']) ?>
-        </h2>
-    </div>
+        <section class="qv-ranking-hero">
+            <div>
+                <span class="qv-ranking-eyebrow">
+                    Ranking oficial
+                </span>
 
+                <h1>
+                    <?= qvRankingH($currentRoundName) ?>
+                </h1>
 
-    <?php if (!empty($activeLeagues) && count($activeLeagues) > 1): ?>
-        <div class="d-flex justify-content-center gap-2 mb-3 px-2" style="overflow-x: auto; white-space: nowrap; padding-bottom: 5px;">
-            <?php foreach ($activeLeagues as $lg):
-                $isActive = ($lg['slug'] === $leagueSlug);
-                $btnClass = $isActive ? 'btn-danger' : 'btn-outline-danger';
-            ?>
-                <a href="/ranking?league=<?= $lg['slug'] ?>" class="btn <?= $btnClass ?> btn-sm fw-bold rounded-pill px-3 shadow-sm">
-                    <?= mb_strtoupper($lg['name']) ?>
-                </a>
-            <?php endforeach; ?>
-        </div>
-    <?php endif; ?>
+                <p>
+                    Consulta posiciones, puntos, premios estimados y resultados actualizados de la jornada.
+                </p>
 
-    <div class="container mb-3">
-        <form action="/ranking" method="get" class="row justify-content-center align-items-center g-2">
-            <input type="hidden" name="league" value="<?= htmlspecialchars($leagueSlug) ?>">
+                <div class="qv-ranking-hero-actions">
+                    <a href="/verificador" class="btn btn-primary btn-lg">
+                        <i class="bi bi-ticket-perforated me-1"></i>
+                        Verificar mi ticket
+                    </a>
 
-            <div class="col-auto">
-                <label class="fw-bold small">VER JORNADA:</label>
+                    <a href="/quinielas-anteriores" class="btn btn-outline-secondary btn-lg">
+                        <i class="bi bi-clock-history me-1"></i>
+                        Ver histórico
+                    </a>
+
+                    <a href="javascript:location.reload()" class="btn btn-outline-secondary btn-lg">
+                        <i class="bi bi-arrow-clockwise me-1"></i>
+                        Refrescar
+                    </a>
+                </div>
             </div>
-            <div class="col-auto">
-                <select name="round_id" class="form-select form-select-sm border-dark fw-bold text-uppercase shadow-sm"
-                    onchange="this.form.submit()" style="min-width: 200px; background-color: #fff;">
 
-                    <?php if (empty($availableRounds)): ?>
-                        <?php if ($currentRound): ?>
-                            <option value="<?= $currentRound['id'] ?>" selected>
-                                <?= htmlspecialchars($currentRound['name']) ?>
-                            </option>
-                        <?php else: ?>
-                            <option value="">NO HAY JORNADAS (<?= htmlspecialchars($leagueSlug) ?>)</option>
-                        <?php endif; ?>
-                    <?php else: ?>
+            <div class="qv-ranking-prize-box">
+                <div class="qv-ranking-status <?= qvRankingH(qvRankingStatusClass($roundStatus)) ?>">
+                    <?= qvRankingStatusLabel($roundStatus) ?>
+                </div>
 
-                        <?php foreach ($availableRounds as $r): ?>
-                            <option value="<?= $r['id'] ?>" <?= ($currentRound && $currentRound['id'] == $r['id']) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($r['name']) ?>
-                                <?= !empty($r['status']) ? ' (' . $r['status'] . ')' : '' ?>
+                <div class="qv-ranking-prizes">
+                    <article>
+                        <span>🥇 1er lugar</span>
+                        <strong>
+                            <?= qvRankingH($currencyCode) ?>
+                            <?= number_format((float)($estimatedPrizes['first'] ?? 0), 2) ?>
+                        </strong>
+                    </article>
+
+                    <article>
+                        <span>🥈 2do lugar</span>
+                        <strong>
+                            <?= qvRankingH($currencyCode) ?>
+                            <?= number_format((float)($estimatedPrizes['second'] ?? 0), 2) ?>
+                        </strong>
+                    </article>
+                </div>
+
+                <small>
+                    Premios estimados según tickets pagados.
+                </small>
+            </div>
+        </section>
+
+        <section class="qv-ranking-filters">
+            <div class="qv-ranking-filter-title">
+                <h2>
+                    Cambiar ranking
+                </h2>
+
+                <p>
+                    Filtra por liga, estado o jornada para encontrar rápidamente la quiniela.
+                </p>
+            </div>
+
+            <?php if (!empty($activeLeagues) && count($activeLeagues) > 1): ?>
+                <div class="qv-ranking-league-tabs">
+                    <?php foreach ($activeLeagues as $league): ?>
+                        <?php
+                        $slug = (string)($league['slug'] ?? '');
+                        $isActiveLeague = $slug === (string)$leagueSlug;
+                        ?>
+
+                        <a
+                            href="/ranking?league=<?= qvRankingH($slug) ?>&status=<?= qvRankingH($statusFilter) ?>"
+                            class="<?= $isActiveLeague ? 'is-active' : '' ?>"
+                        >
+                            <?= qvRankingH($league['name'] ?? 'Liga') ?>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <form action="/ranking" method="get" class="qv-ranking-filter-form">
+                <input type="hidden" name="league" value="<?= qvRankingH($leagueSlug) ?>">
+
+                <div>
+                    <label for="status" class="form-label">
+                        Estado
+                    </label>
+
+                    <select name="status" id="status" class="form-select form-select-lg">
+                        <?php foreach ($statusOptions as $value => $label): ?>
+                            <option value="<?= qvRankingH($value) ?>" <?= (string)$statusFilter === (string)$value ? 'selected' : '' ?>>
+                                <?= qvRankingH($label) ?>
                             </option>
                         <?php endforeach; ?>
-
-                    <?php endif; ?>
-                </select>
-            </div>
-        </form>
-    </div>
-
-
-    <div class="row justify-content-center mb-4">
-        <div class="col-auto">
-            <div class="d-flex gap-3 align-items-center justify-content-center flex-wrap">
-
-                <div class="position-relative bg-white text-dark border border-warning border-3 rounded-3 px-4 py-2 shadow-sm text-center"
-                    style="min-width: 140px;">
-                    <div class="position-absolute top-0 start-50 translate-middle badge bg-warning text-dark border border-light shadow-sm"
-                        style="font-size: 0.7rem;">
-                        🥇 1er LUGAR
-                    </div>
-                    <div class="fw-black fs-3 text-success mt-2">
-                        $<?= number_format($estimatedPrizes['first'], 2) ?>
-                    </div>
-                    <small class="text-muted fw-bold" style="font-size: 0.7rem;"><?= $currencyCode ?></small>
+                    </select>
                 </div>
 
-                <div class="position-relative bg-white text-dark border border-secondary border-3 rounded-3 px-4 py-2 shadow-sm text-center"
-                    style="min-width: 140px;">
-                    <div class="position-absolute top-0 start-50 translate-middle badge bg-secondary text-white border border-light shadow-sm"
-                        style="font-size: 0.7rem;">
-                        🥈 2do LUGAR
-                    </div>
-                    <div class="fw-black fs-3 text-primary mt-2">
-                        $<?= number_format($estimatedPrizes['second'], 2) ?>
-                    </div>
-                    <small class="text-muted fw-bold" style="font-size: 0.7rem;"><?= $currencyCode ?></small>
+                <div>
+                    <label for="round_id" class="form-label">
+                        Jornada
+                    </label>
+
+                    <select name="round_id" id="round_id" class="form-select form-select-lg">
+                        <?php if (empty($availableRounds)): ?>
+                            <?php if ($currentRound): ?>
+                                <option value="<?= (int)$currentRound['id'] ?>" selected>
+                                    <?= qvRankingH($currentRound['name'] ?? 'Jornada') ?>
+                                </option>
+                            <?php else: ?>
+                                <option value="">
+                                    No hay jornadas disponibles
+                                </option>
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <?php foreach ($availableRounds as $round): ?>
+                                <?php $roundId = (int)($round['id'] ?? 0); ?>
+
+                                <option value="<?= $roundId ?>" <?= ($currentRound && (int)$currentRound['id'] === $roundId) ? 'selected' : '' ?>>
+                                    <?= qvRankingH($round['name'] ?? 'Jornada') ?>
+                                    <?= !empty($round['status']) ? ' · ' . qvRankingStatusLabel($round['status']) : '' ?>
+                                </option>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </select>
                 </div>
 
-            </div>
-            <div class="text-center text-muted mt-1" style="font-size: 10px;">
-                * Premios acumulados estimados
-            </div>
+                <div class="qv-ranking-filter-actions">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-funnel-fill me-1"></i>
+                        Aplicar
+                    </button>
 
-        </div>
-    </div>
+                    <a href="/ranking" class="btn btn-outline-secondary btn-lg">
+                        Limpiar
+                    </a>
+                </div>
+            </form>
+        </section>
 
+        <section class="qv-ranking-kpis">
+            <article>
+                <span>Participantes</span>
+                <strong><?= number_format((int)($rankingStats['total_tickets'] ?? count($tickets))) ?></strong>
+                <small>Tickets pagados</small>
+            </article>
 
-    <div class="row justify-content-center mb-2">
-        <div class="col-12 text-center mb-2" style="font-size: 12px; font-weight: bold;">
-            ACTUALIZADO: <?= $updatedAt ?> HRS | PARTICIPANTES: <span id="count-display"><?= count($tickets) ?></span>
-            <a href="javascript:location.reload()" class="ms-2 text-danger text-decoration-underline">REFRESCAR</a>
-        </div>
+            <article>
+                <span>Partidos</span>
+                <strong>
+                    <?= (int)($rankingStats['finished_matches'] ?? 0) ?>/<?= (int)($rankingStats['total_matches'] ?? count($matches)) ?>
+                </strong>
+                <small><?= (int)($rankingStats['pending_matches'] ?? 0) ?> pendiente(s)</small>
+            </article>
 
-        <div class="col-12 col-md-6 col-lg-4">
-            <div class="input-group input-group-sm">
-                <span class="input-group-text bg-white border-dark"><i class="bi bi-search"></i></span>
-                <input type="text" id="ranking-search" class="form-control border-dark fw-bold text-uppercase"
-                    placeholder="BUSCAR NOMBRE O TICKET..." autocomplete="off">
-            </div>
-        </div>
-    </div>
+            <article>
+                <span>Líderes</span>
+                <strong><?= (int)($rankingStats['total_first'] ?? 0) ?></strong>
+                <small>En primer lugar</small>
+            </article>
 
+            <article>
+                <span>Segundos</span>
+                <strong><?= (int)($rankingStats['total_second'] ?? 0) ?></strong>
+                <small>En segundo lugar</small>
+            </article>
 
-    <div class="row mb-3">
-        <div class="col-md-6 text-center">
-            <div class="alert alert-warning">
-             Total primeros lugares: <strong><?= (int)($totalPrimero ?? 0) ?></strong>
-            </div>
-        </div>
-        <div class="col-md-6 text-center">
-            <div class="alert alert-secondary">
-               Total segundos lugares: <strong><?= (int)($totalSegundo ?? 0) ?></strong>
-            </div>
-        </div>
-    </div>
+            <article>
+                <span>Actualizado</span>
+                <strong><?= qvRankingH($updatedAt) ?></strong>
+                <small>Hora local</small>
+            </article>
+        </section>
 
-    <div class="ph-table-container">
-        <table class="ph-table" id="ranking-table">
-            <thead>
-                <tr class="ph-header-blue-row">
-                    <th class="ph-col-name-header">PARTICIPANTE</th>
-                    <?php foreach ($matches as $m):
-                        $hasScore = isset($m['home_score']) && isset($m['away_score']) && $m['result_outcome'];
+        <?php if ($topTickets !== []): ?>
+            <section class="qv-ranking-podium">
+                <?php foreach ($topTickets as $index => $ticket): ?>
+                    <?php
+                    $position = $index + 1;
+                    $class = $position === 1 ? 'is-gold' : ($position === 2 ? 'is-silver' : 'is-bronze');
                     ?>
-                        <th class="ph-col-match-header" title="<?= htmlspecialchars($m['home_team_name']) ?> vs <?= htmlspecialchars($m['away_team_name']) ?>">
-                            <div class="d-flex flex-column align-items-center justify-content-center gap-1">
-                                <?php if (!empty($m['home_team_logo'])): ?>
-                                    <img src="<?= htmlspecialchars($m['home_team_logo']) ?>" class="ph-team-logo" alt="L">
-                                <?php else: ?>
-                                    <span>L</span>
-                                <?php endif; ?>
 
-                                <?php if ($hasScore): ?>
-                                    <span class="ph-score-text">
-                                        <?= $m['home_score'] ?> - <?= $m['away_score'] ?>
-                                    </span>
-                                <?php else: ?>
-                                    <span class="ph-vs-text">vs</span>
-                                <?php endif; ?>
+                    <article class="qv-ranking-podium-card <?= qvRankingH($class) ?>">
+                        <div class="qv-ranking-podium-rank">
+                            #<?= $position ?>
+                        </div>
 
-                                <?php if (!empty($m['away_team_logo'])): ?>
-                                    <img src="<?= htmlspecialchars($m['away_team_logo']) ?>" class="ph-team-logo" alt="V">
-                                <?php else: ?>
-                                    <span>V</span>
-                                <?php endif; ?>
-                            </div>
-                        </th>
-                    <?php endforeach; ?>
-                    <th class="ph-pts-header">PTS</th>
-                </tr>
-                <tr class="ph-row-dark">
-                    <th class="ph-col-name-header text-end text-white px-2">RESULTADOS &raquo;</th>
-                    <?php foreach ($matches as $m): ?>
-                        <th class="text-white"><?= $m['result_outcome'] ?? '-' ?></th>
-                    <?php endforeach; ?>
-                    <th class="ph-pts-header">-</th>
-                </tr>
-            </thead>
+                        <div>
+                            <h3>
+                                <?= qvRankingH($ticket['user_name'] ?? 'Jugador') ?>
+                            </h3>
 
-            <tbody>
-                <?php if (empty($tickets)): ?>
-                    <tr>
-                        <td colspan="<?= count($matches) + 2 ?>" class="p-4 text-center">No hay datos disponibles para esta jornada.</td>
-                    </tr>
-                <?php else: ?>
-                    <?php $rank = 1;
-                    foreach ($tickets as $t):
-                        $picks = is_array($t['picks'] ?? null) ? $t['picks'] : [];
+                            <p>
+                                Ticket:
+                                <strong><?= qvRankingH($ticket['ticket_code'] ?? '') ?></strong>
+                            </p>
+                        </div>
 
-                        $currentPoints = (int)($t['points'] ?? 0);
+                        <div class="qv-ranking-podium-points">
+                            <?= (int)($ticket['points'] ?? 0) ?>
+                            <span>pts</span>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            </section>
+        <?php endif; ?>
 
-                        if ($currentPoints !== $lastPoints) {
-                            $colorIndex++;
-                            $lastPoints = $currentPoints;
-                        }
+        <section class="qv-ranking-table-tools">
+            <div>
+                <label for="ranking-search" class="form-label">
+                    Buscar participante
+                </label>
 
-                        $pointsCellClass = $colorPalette[$colorIndex % count($colorPalette)];
-                    ?>
-                        <tr class="ranking-row">
-                            <td class="ph-cell-name">
-                                <span class="ph-rank-number"><?= $rank ?></span>
-                                <span class="ph-user-name"><?= mb_strtoupper((string)($t['user_name'] ?? '')) ?></span>
-<span class="d-none search-data"><?= mb_strtoupper((string)($t['user_name'] ?? '') . ' ' . (string)($t['ticket_code'] ?? '')) ?></span>
-                            </td>
-                            <?php foreach ($matches as $m):
-                                $userPick = $picks[$m['id']] ?? '';
-                                $official = $officialResults[$m['id']] ?? null;
-                                $cellClass = 'ph-miss';
-                                if ($userPick !== '' && $official !== null && $userPick === $official) {
-                                    $cellClass = 'ph-hit';
-                                }
-                            ?>
-                               <td class="ph-cell-pick <?= $cellClass ?>"><?= htmlspecialchars((string)($userPick ?: '-')) ?></td>
+                <div class="input-group input-group-lg">
+                    <span class="input-group-text">
+                        <i class="bi bi-search"></i>
+                    </span>
+
+                    <input
+                        type="text"
+                        id="ranking-search"
+                        class="form-control fw-bold text-uppercase"
+                        placeholder="Nombre o código de ticket..."
+                        autocomplete="off"
+                    >
+                </div>
+            </div>
+
+            <div class="qv-ranking-visible-count">
+                Participantes visibles:
+                <strong id="count-display"><?= count($tickets) ?></strong>
+            </div>
+        </section>
+
+        <section class="qv-ranking-table-card">
+            <div class="qv-ranking-table-head">
+                <div>
+                    <h2>
+                        Tabla de posiciones
+                    </h2>
+
+                    <p>
+                        Verde indica acierto. Blanco indica fallo o resultado pendiente.
+                    </p>
+                </div>
+
+                <div>
+                    <?= number_format(count($tickets)) ?> tickets
+                </div>
+            </div>
+
+            <div class="ph-table-container">
+                <table class="ph-table" id="ranking-table">
+                    <thead>
+                        <tr class="ph-header-blue-row">
+                            <th class="ph-col-name-header">
+                                PARTICIPANTE
+                            </th>
+
+                            <?php foreach ($matches as $match): ?>
+                                <?php
+                                $hasScore = isset($match['home_score']) &&
+                                    isset($match['away_score']) &&
+                                    (string)($match['result_outcome'] ?? '') !== '';
+                                ?>
+
+                                <th
+                                    class="ph-col-match-header"
+                                    title="<?= qvRankingH($match['home_team_name'] ?? '') ?> vs <?= qvRankingH($match['away_team_name'] ?? '') ?>"
+                                >
+                                    <div class="d-flex flex-column align-items-center justify-content-center gap-1">
+                                        <?php if (!empty($match['home_team_logo'])): ?>
+                                            <img
+                                                src="<?= qvRankingH($match['home_team_logo']) ?>"
+                                                class="ph-team-logo"
+                                                alt="Local"
+                                                loading="lazy"
+                                            >
+                                        <?php else: ?>
+                                            <span>L</span>
+                                        <?php endif; ?>
+
+                                        <?php if ($hasScore): ?>
+                                            <span class="ph-score-text">
+                                                <?= (int)$match['home_score'] ?> - <?= (int)$match['away_score'] ?>
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="ph-vs-text">
+                                                vs
+                                            </span>
+                                        <?php endif; ?>
+
+                                        <?php if (!empty($match['away_team_logo'])): ?>
+                                            <img
+                                                src="<?= qvRankingH($match['away_team_logo']) ?>"
+                                                class="ph-team-logo"
+                                                alt="Visita"
+                                                loading="lazy"
+                                            >
+                                        <?php else: ?>
+                                            <span>V</span>
+                                        <?php endif; ?>
+                                    </div>
+                                </th>
                             <?php endforeach; ?>
 
-                            <td class="ph-pts <?= $pointsCellClass ?>"><?= (int)$t['points'] ?></td>
+                            <th class="ph-pts-header">
+                                PTS
+                            </th>
                         </tr>
-                    <?php $rank++;
-                    endforeach; ?>
-                <?php endif; ?>
-            </tbody>
-        </table>
+
+                        <tr class="ph-row-dark">
+                            <th class="ph-col-name-header text-end text-white px-2">
+                                RESULTADOS »
+                            </th>
+
+                            <?php foreach ($matches as $match): ?>
+                                <th class="text-white">
+                                    <?= qvRankingH($match['result_outcome'] ?? '-') ?>
+                                </th>
+                            <?php endforeach; ?>
+
+                            <th class="ph-pts-header">
+                                -
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <?php if ($tickets === []): ?>
+                            <tr>
+                                <td colspan="<?= count($matches) + 2 ?>" class="p-4 text-center">
+                                    No hay datos disponibles para esta jornada.
+                                </td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($tickets as $index => $ticket): ?>
+                                <?php
+                                $rank = $index + 1;
+                                $picks = is_array($ticket['picks'] ?? null) ? $ticket['picks'] : [];
+
+                                $pointsClass = 'ph-rank-std';
+
+                                if ($rank === 1) {
+                                    $pointsClass = 'ph-rank-1';
+                                } elseif ($rank === 2 || $rank === 3) {
+                                    $pointsClass = 'ph-rank-2';
+                                }
+                                ?>
+
+                                <tr class="ranking-row">
+                                    <td class="ph-cell-name">
+                                        <span class="ph-rank-number">
+                                            <?= $rank ?>
+                                        </span>
+
+                                        <span class="ph-user-name">
+                                            <?= qvRankingH(mb_strtoupper((string)($ticket['user_name'] ?? ''))) ?>
+                                        </span>
+
+                                        <span class="d-none search-data">
+                                            <?= qvRankingH(mb_strtoupper(
+                                                (string)($ticket['user_name'] ?? '') .
+                                                ' ' .
+                                                (string)($ticket['ticket_code'] ?? '')
+                                            )) ?>
+                                        </span>
+                                    </td>
+
+                                    <?php foreach ($matches as $match): ?>
+                                        <?php
+                                        $matchId = (int)($match['id'] ?? 0);
+                                        $userPick = $picks[$matchId] ?? '';
+                                        $official = $officialResults[$matchId] ?? null;
+                                        $cellClass = 'ph-miss';
+
+                                        if ($userPick !== '' && $official !== null && $userPick === $official) {
+                                            $cellClass = 'ph-hit';
+                                        }
+                                        ?>
+
+                                        <td class="ph-cell-pick <?= qvRankingH($cellClass) ?>">
+                                            <?= qvRankingH((string)($userPick ?: '-')) ?>
+                                        </td>
+                                    <?php endforeach; ?>
+
+                                    <td class="ph-pts <?= qvRankingH($pointsClass) ?>">
+                                        <?= (int)($ticket['points'] ?? 0) ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </section>
     </div>
-</div>
+</section>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const searchInput = document.getElementById('ranking-search');
         const tableRows = document.querySelectorAll('.ranking-row');
         const countDisplay = document.getElementById('count-display');
 
-        if (searchInput) {
-            searchInput.addEventListener('keyup', function(e) {
-                const term = e.target.value.toUpperCase();
-                let visibleCount = 0;
-                tableRows.forEach(row => {
-                    const text = row.querySelector('.search-data').textContent;
-                    if (text.includes(term)) {
-                        row.style.display = '';
-                        visibleCount++;
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-                if (countDisplay) countDisplay.textContent = visibleCount;
-            });
+        if (!searchInput) {
+            return;
         }
+
+        searchInput.addEventListener('keyup', function (event) {
+            const term = String(event.target.value || '').toUpperCase();
+            let visibleCount = 0;
+
+            tableRows.forEach(function (row) {
+                const searchNode = row.querySelector('.search-data');
+                const text = searchNode ? searchNode.textContent : '';
+
+                if (text.includes(term)) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            if (countDisplay) {
+                countDisplay.textContent = String(visibleCount);
+            }
+        });
     });
 </script>
 
 <style>
-    .ph-wrapper {
-        font-family: Arial, Helvetica, sans-serif;
-        background-color: #f0f0f0;
-        padding: 10px;
+    .qv-ranking-page {
         min-height: 80vh;
+        padding: 2rem 0 4rem;
+        color: #0f172a;
+        background:
+            radial-gradient(circle at top left, rgba(245, 158, 11, 0.15), transparent 24rem),
+            linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
     }
 
-    /* El resto de estilos se mantienen igual */
-    .ph-title-red {
-        background-color: #cc0000;
-        color: #fff;
-        text-align: center;
-        padding: 10px;
-        font-weight: bold;
-        font-size: 18px;
-        margin-bottom: 10px;
-        text-transform: uppercase;
-        border-radius: 4px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    .qv-ranking-hero {
+        display: grid;
+        gap: 1.2rem;
+        align-items: stretch;
+        margin-bottom: 1.2rem;
     }
 
-    .ph-bar-blue {
-        background-color: #000080;
-        color: #fff;
-        text-align: center;
-        padding: 8px;
-        font-weight: bold;
-        font-size: 14px;
+    .qv-ranking-hero > div:first-child,
+    .qv-ranking-prize-box,
+    .qv-ranking-filters,
+    .qv-ranking-kpis article,
+    .qv-ranking-podium-card,
+    .qv-ranking-table-tools,
+    .qv-ranking-table-card {
+        border: 1px solid rgba(15, 23, 42, 0.1);
+        border-radius: 1.25rem;
+        background: #ffffff;
+        box-shadow: 0 18px 48px rgba(15, 23, 42, 0.1);
+    }
+
+    .qv-ranking-hero > div:first-child {
+        padding: 1.4rem;
+    }
+
+    .qv-ranking-eyebrow {
+        display: inline-flex;
+        margin-bottom: 0.75rem;
+        color: #f59e0b;
+        font-size: 0.78rem;
+        font-weight: 950;
+        letter-spacing: 0.16em;
         text-transform: uppercase;
-        border-radius: 4px;
+    }
+
+    .qv-ranking-hero h1 {
+        margin: 0;
+        color: #0f172a;
+        font-size: clamp(2rem, 6vw, 4rem);
+        font-weight: 950;
+        line-height: 0.96;
+        letter-spacing: -0.06em;
+    }
+
+    .qv-ranking-hero p {
+        max-width: 760px;
+        margin: 0.9rem 0 0;
+        color: #64748b;
+        line-height: 1.65;
+    }
+
+    .qv-ranking-hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.7rem;
+        margin-top: 1.2rem;
+    }
+
+    .qv-ranking-prize-box {
+        padding: 1.2rem;
+    }
+
+    .qv-ranking-status {
+        display: inline-flex;
+        padding: 0.45rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 950;
+        text-transform: uppercase;
+    }
+
+    .qv-ranking-status.is-open {
+        color: #065f46;
+        background: #d1fae5;
+    }
+
+    .qv-ranking-status.is-closed {
+        color: #92400e;
+        background: #fef3c7;
+    }
+
+    .qv-ranking-status.is-finished {
+        color: #1e40af;
+        background: #dbeafe;
+    }
+
+    .qv-ranking-prizes {
+        display: grid;
+        gap: 0.8rem;
+        margin-top: 1rem;
+    }
+
+    .qv-ranking-prizes article {
+        padding: 1rem;
+        border-radius: 1rem;
+        background: #f8fafc;
+    }
+
+    .qv-ranking-prizes span {
+        display: block;
+        color: #64748b;
+        font-size: 0.78rem;
+        font-weight: 950;
+        text-transform: uppercase;
+    }
+
+    .qv-ranking-prizes strong {
+        display: block;
+        margin-top: 0.35rem;
+        color: #0f172a;
+        font-size: 1.55rem;
+        font-weight: 950;
+        line-height: 1;
+    }
+
+    .qv-ranking-prize-box small {
+        display: block;
+        margin-top: 0.8rem;
+        color: #64748b;
+    }
+
+    .qv-ranking-filters {
+        margin-bottom: 1.2rem;
+        padding: 1.15rem;
+    }
+
+    .qv-ranking-filter-title h2 {
+        margin: 0;
+        font-size: 1.45rem;
+        font-weight: 950;
+        letter-spacing: -0.04em;
+    }
+
+    .qv-ranking-filter-title p {
+        margin: 0.35rem 0 0;
+        color: #64748b;
+    }
+
+    .qv-ranking-league-tabs {
+        display: flex;
+        gap: 0.55rem;
+        margin-top: 1rem;
+        padding-bottom: 0.35rem;
+        overflow-x: auto;
+    }
+
+    .qv-ranking-league-tabs a {
+        flex: 0 0 auto;
+        padding: 0.55rem 0.9rem;
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        border-radius: 999px;
+        color: #0f172a;
+        background: #f8fafc;
+        font-weight: 900;
+        text-decoration: none;
+    }
+
+    .qv-ranking-league-tabs a.is-active,
+    .qv-ranking-league-tabs a:hover {
+        color: #111827;
+        border-color: rgba(245, 158, 11, 0.5);
+        background: #fef3c7;
+    }
+
+    .qv-ranking-filter-form {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+        margin-top: 1rem;
+    }
+
+    .qv-ranking-filter-form .form-label,
+    .qv-ranking-table-tools .form-label {
+        color: #64748b;
+        font-size: 0.76rem;
+        font-weight: 900;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+
+    .qv-ranking-filter-actions {
+        display: grid;
+        gap: 0.55rem;
+        align-self: end;
+    }
+
+    .qv-ranking-kpis {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.85rem;
+        margin-bottom: 1.2rem;
+    }
+
+    .qv-ranking-kpis article {
+        padding: 1rem;
+    }
+
+    .qv-ranking-kpis span {
+        display: block;
+        color: #64748b;
+        font-size: 0.78rem;
+        font-weight: 950;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+
+    .qv-ranking-kpis strong {
+        display: block;
+        margin-top: 0.25rem;
+        color: #f59e0b;
+        font-size: 1.45rem;
+        font-weight: 950;
+        line-height: 1;
+    }
+
+    .qv-ranking-kpis small {
+        display: block;
+        margin-top: 0.35rem;
+        color: #64748b;
+    }
+
+    .qv-ranking-podium {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.85rem;
+        margin-bottom: 1.2rem;
+    }
+
+    .qv-ranking-podium-card {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 0.85rem;
+        align-items: center;
+        padding: 1rem;
+    }
+
+    .qv-ranking-podium-card.is-gold {
+        border-color: rgba(245, 158, 11, 0.65);
+    }
+
+    .qv-ranking-podium-rank {
+        display: grid;
+        place-items: center;
+        width: 3rem;
+        height: 3rem;
+        border-radius: 1rem;
+        color: #111827;
+        background: #fbbf24;
+        font-weight: 950;
+    }
+
+    .qv-ranking-podium-card h3 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 950;
+    }
+
+    .qv-ranking-podium-card p {
+        margin: 0.25rem 0 0;
+        color: #64748b;
+        font-size: 0.85rem;
+    }
+
+    .qv-ranking-podium-points {
+        color: #f59e0b;
+        font-size: 1.55rem;
+        font-weight: 950;
+        line-height: 1;
+        text-align: right;
+    }
+
+    .qv-ranking-podium-points span {
+        display: block;
+        color: #64748b;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+    }
+
+    .qv-ranking-table-tools {
+        display: grid;
+        gap: 0.8rem;
+        margin-bottom: 1rem;
+        padding: 1rem;
+    }
+
+    .qv-ranking-visible-count {
+        color: #64748b;
+        font-weight: 800;
+    }
+
+    .qv-ranking-visible-count strong {
+        color: #f59e0b;
+    }
+
+    .qv-ranking-table-card {
+        overflow: hidden;
+    }
+
+    .qv-ranking-table-head {
+        display: grid;
+        gap: 0.7rem;
+        padding: 1rem;
+        border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+    }
+
+    .qv-ranking-table-head h2 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 950;
+    }
+
+    .qv-ranking-table-head p {
+        margin: 0.25rem 0 0;
+        color: #64748b;
+    }
+
+    .qv-ranking-table-head > div:last-child {
+        color: #f59e0b;
+        font-weight: 950;
     }
 
     .ph-table-container {
         width: 100%;
         overflow-x: auto;
         background: #fff;
-        border: 2px solid #000;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 
     .ph-table {
         width: 100%;
         border-collapse: collapse;
         table-layout: auto;
+        color: #111827;
     }
 
     .ph-table th,
     .ph-table td {
-        border: 1px solid #999;
+        border: 1px solid #94a3b8;
         text-align: center;
         vertical-align: middle;
         padding: 6px 4px;
     }
 
     .ph-header-blue-row th {
-        background-color: #000080;
+        background-color: #0f172a;
         color: white;
         font-size: 12px;
     }
 
     .ph-row-dark th {
-        background-color: #333;
+        background-color: #111827;
         color: white;
         font-size: 12px;
     }
@@ -354,12 +887,12 @@ $colorIndex = -1; // Iniciamos en -1 para que el primer grupo sea 0
         padding-left: 10px !important;
         min-width: 220px;
         font-size: 13px;
-        font-weight: bold;
+        font-weight: 900;
         white-space: nowrap;
     }
 
     .ph-col-match-header {
-        min-width: 50px;
+        min-width: 54px;
     }
 
     .ph-team-logo {
@@ -369,112 +902,119 @@ $colorIndex = -1; // Iniciamos en -1 para que el primer grupo sea 0
     }
 
     .ph-vs-text {
+        color: #f59e0b;
         font-size: 9px;
-        color: #ffc107;
-        font-weight: bold;
+        font-weight: 900;
     }
 
     .ph-score-text {
-        font-size: 11px;
+        padding: 1px 4px;
+        border-radius: 4px;
         color: #fff;
         background: #000;
-        padding: 1px 3px;
-        border-radius: 3px;
-        font-weight: bold;
+        font-size: 11px;
+        font-weight: 900;
     }
 
     .ph-cell-pick {
-        font-weight: 900;
+        font-weight: 950;
         font-size: 14px;
     }
 
     .ph-hit {
-        background-color: #00cc00 !important;
-        color: #000 !important;
+        background-color: #22c55e !important;
+        color: #052e16 !important;
     }
 
     .ph-miss {
         background-color: #fff !important;
-        color: #000;
+        color: #111827;
     }
 
     .ph-pts-header,
     .ph-pts {
-        width: 60px;
+        width: 62px;
         font-size: 15px;
-        font-weight: 900;
+        font-weight: 950;
     }
 
     .ph-rank-number {
-        color: #000080;
+        color: #1d4ed8;
         margin-right: 5px;
         font-size: 14px;
+        font-weight: 950;
     }
 
-    /* Nota: He eliminado las clases .ph-rank-1 y .ph-rank-2 porque ahora el color lo controla el array PHP */
+    .ph-rank-1 {
+        background-color: #fbbf24 !important;
+        color: #111827 !important;
+    }
+
+    .ph-rank-2 {
+        background-color: #67e8f9 !important;
+        color: #111827 !important;
+    }
+
+    .ph-rank-std {
+        background-color: #fef9c3 !important;
+        color: #111827 !important;
+    }
+
+    @media (min-width: 768px) {
+        .qv-ranking-hero {
+            grid-template-columns: 1fr 360px;
+        }
+
+        .qv-ranking-prizes {
+            grid-template-columns: 1fr;
+        }
+
+        .qv-ranking-filter-form {
+            grid-template-columns: 1fr 1.4fr auto;
+            align-items: end;
+        }
+
+        .qv-ranking-filter-actions {
+            grid-template-columns: auto auto;
+        }
+
+        .qv-ranking-kpis {
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+        }
+
+        .qv-ranking-podium {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .qv-ranking-table-tools {
+            grid-template-columns: 1fr auto;
+            align-items: end;
+        }
+
+        .qv-ranking-table-head {
+            grid-template-columns: 1fr auto;
+            align-items: center;
+        }
+    }
 
     @media (max-width: 768px) {
+        .qv-ranking-page {
+            padding-top: 1rem;
+        }
+
+        .qv-ranking-hero > div:first-child,
+        .qv-ranking-prize-box,
+        .qv-ranking-filters,
+        .qv-ranking-table-tools {
+            border-radius: 1rem;
+        }
+
         .ph-table-container {
-            overflow-x: hidden;
-            border: 1px solid #666;
+            overflow-x: auto;
         }
 
         .ph-table {
-            table-layout: fixed;
-            width: 100%;
-        }
-
-        .ph-table th,
-        .ph-table td {
-            padding: 2px 0px !important;
-            height: 30px;
-        }
-
-        .ph-col-name-header,
-        .ph-cell-name {
-            width: 28% !important;
-            max-width: 28% !important;
-            min-width: 0 !important;
-            font-size: 10px !important;
-            padding-left: 4px !important;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .ph-col-match-header,
-        .ph-cell-pick {
-            width: auto !important;
-            font-size: 10px !important;
-        }
-
-        .ph-team-logo {
-            width: 14px !important;
-            height: 14px !important;
-        }
-
-        .ph-vs-text {
-            display: none;
-        }
-
-        .ph-score-text {
-            font-size: 9px;
-            padding: 0 1px;
-        }
-
-        .ph-pts-header,
-        .ph-pts {
-            width: 9% !important;
-            font-size: 11px !important;
-        }
-
-        .ph-rank-number {
-            font-size: 9px;
-            margin-right: 2px;
-        }
-
-        .ph-user-name {
-            font-size: 9px;
+            min-width: 760px;
         }
     }
 </style>
