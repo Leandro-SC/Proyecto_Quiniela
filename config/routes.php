@@ -39,6 +39,10 @@ return [
             'controller' => 'VerifierController',
             'action'     => 'index',
         ],
+        '/testimonios' => [
+            'controller' => 'TestimonialsController',
+            'action'     => 'index',
+        ],
 
         // ============================
         // API · PÚBLICA

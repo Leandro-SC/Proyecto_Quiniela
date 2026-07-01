@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 if (!function_exists('h')) {
     /**
-     * Escapa texto para salida HTML segura.
+     * Escapa texto para HTML.
      *
-     * @param mixed $s Valor a imprimir.
+     * @param mixed $s Valor.
      * @return string
      */
     function h(mixed $s): string
@@ -35,9 +35,9 @@ if (!function_exists('qvVerifierPickLabel')) {
 
 if (!function_exists('qvVerifierStatusLabel')) {
     /**
-     * Traduce estado técnico del ticket a texto legible.
+     * Traduce estado técnico.
      *
-     * @param string $status Estado del ticket.
+     * @param string $status Estado.
      * @return string
      */
     function qvVerifierStatusLabel(string $status): string
@@ -54,9 +54,9 @@ if (!function_exists('qvVerifierStatusLabel')) {
 
 if (!function_exists('qvVerifierStatusClass')) {
     /**
-     * Devuelve clase visual según estado del ticket.
+     * Devuelve clase visual por estado.
      *
-     * @param string $status Estado del ticket.
+     * @param string $status Estado.
      * @return string
      */
     function qvVerifierStatusClass(string $status): string
@@ -70,9 +70,30 @@ if (!function_exists('qvVerifierStatusClass')) {
     }
 }
 
+if (!function_exists('qvVerifierMaskedPhone')) {
+    /**
+     * Oculta teléfono dejando últimos 4 dígitos.
+     *
+     * @param mixed $phone Teléfono.
+     * @return string
+     */
+    function qvVerifierMaskedPhone(mixed $phone): string
+    {
+        $digits = preg_replace('/\D+/', '', (string)$phone) ?? '';
+
+        if (strlen($digits) <= 4) {
+            return $digits;
+        }
+
+        return str_repeat('•', max(0, strlen($digits) - 4)) . substr($digits, -4);
+    }
+}
+
 $ticket = $ticket ?? null;
 $items = $items ?? [];
-$ticketCode = $ticketCode ?? ($searchCode ?? '');
+$matches = $matches ?? [];
+$searchQuery = $searchQuery ?? ($ticketCode ?? '');
+$searchType = $searchType ?? 'auto';
 $error = $error ?? null;
 $rank = $rank ?? null;
 
@@ -83,18 +104,22 @@ $leagueName = (string)($ticket['league_name'] ?? 'Liga');
 $roundName = (string)($ticket['round_name'] ?? 'Jornada');
 $points = (int)($ticket['points'] ?? 0);
 
-$shareText = '';
+$currentUrl = '/verificador';
 
-if ($ticket) {
-    $shareText = 'Mi ticket de quiniela es ' . $ticketCodeResult . '. Revisa el ranking y resultados.';
+if ($ticketCodeResult !== '') {
+    $currentUrl .= '?q=' . rawurlencode($ticketCodeResult) . '&type=code';
 }
+
+$shareText = $ticket
+    ? 'Mi ticket de quiniela es ' . $ticketCodeResult . '. Verifica resultados y ranking aquí: ' . $currentUrl
+    : '';
 
 $whatsappShareUrl = $shareText !== ''
     ? 'https://wa.me/?text=' . rawurlencode($shareText)
     : '';
 ?>
 
-<div class="container py-5 qv-verifier-page" style="max-width: 980px;">
+<div class="container py-5 qv-verifier-page" style="max-width: 1040px;">
 
     <div class="text-center mb-4">
         <span class="badge rounded-pill bg-warning text-dark fw-bold px-3 py-2 mb-3">
@@ -106,16 +131,37 @@ $whatsappShareUrl = $shareText !== ''
         </h1>
 
         <p class="text-muted mb-0">
-            Ingresa tu código de ticket para consultar tus resultados, puntos y posición.
+            Busca tu ticket por código, teléfono o nombre y consulta tus puntos.
         </p>
     </div>
 
-    <div class="card shadow-sm border-0 mb-5 overflow-hidden">
+    <div class="card shadow-sm border-0 mb-4 overflow-hidden">
         <div class="card-body p-4 bg-light">
-            <form method="get" action="/verificador" class="row g-3 justify-content-center">
-                <div class="col-12 col-md-10">
-                    <label for="ticket_code" class="form-label fw-bold small text-uppercase text-muted">
-                        Código de ticket
+            <form method="get" action="/verificador" class="row g-3 align-items-end justify-content-center">
+                <div class="col-12 col-md-3">
+                    <label for="type" class="form-label fw-bold small text-uppercase text-muted">
+                        Buscar por
+                    </label>
+
+                    <select name="type" id="type" class="form-select form-select-lg">
+                        <option value="auto" <?= $searchType === 'auto' ? 'selected' : '' ?>>
+                            Automático
+                        </option>
+                        <option value="code" <?= $searchType === 'code' ? 'selected' : '' ?>>
+                            Código
+                        </option>
+                        <option value="phone" <?= $searchType === 'phone' ? 'selected' : '' ?>>
+                            Teléfono
+                        </option>
+                        <option value="name" <?= $searchType === 'name' ? 'selected' : '' ?>>
+                            Nombre
+                        </option>
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-7">
+                    <label for="q" class="form-label fw-bold small text-uppercase text-muted">
+                        Dato de búsqueda
                     </label>
 
                     <div class="input-group input-group-lg">
@@ -124,25 +170,23 @@ $whatsappShareUrl = $shareText !== ''
                         </span>
 
                         <input
-                            id="ticket_code"
+                            id="q"
                             type="text"
-                            name="ticket_code"
-                            class="form-control text-center fw-bold text-uppercase"
-                            placeholder="Ej: QV-0001-00001"
-                            value="<?= h($ticketCode) ?>"
+                            name="q"
+                            class="form-control fw-bold"
+                            placeholder="Ej: QV-0001-00001, teléfono o nombre"
+                            value="<?= h($searchQuery) ?>"
                             autocomplete="off"
                             required
                         >
-
-                        <button class="btn btn-primary px-4 fw-bold" type="submit">
-                            <i class="bi bi-search me-1"></i>
-                            Buscar
-                        </button>
                     </div>
+                </div>
 
-                    <div class="form-text text-center mt-2">
-                        El código aparece en el comprobante generado al enviar tu quiniela.
-                    </div>
+                <div class="col-12 col-md-2 d-grid">
+                    <button class="btn btn-primary btn-lg fw-bold" type="submit">
+                        <i class="bi bi-search me-1"></i>
+                        Buscar
+                    </button>
                 </div>
             </form>
 
@@ -154,6 +198,59 @@ $whatsappShareUrl = $shareText !== ''
             <?php endif; ?>
         </div>
     </div>
+
+    <?php if ($matches !== [] && !$ticket): ?>
+        <div class="card border-0 shadow-sm mb-4 overflow-hidden">
+            <div class="card-header bg-dark text-white fw-bold text-uppercase">
+                Tickets encontrados
+            </div>
+
+            <div class="list-group list-group-flush">
+                <?php foreach ($matches as $match): ?>
+                    <a
+                        href="/verificador?ticket_id=<?= (int)$match['id'] ?>"
+                        class="list-group-item list-group-item-action p-3"
+                    >
+                        <div class="d-flex flex-column flex-md-row justify-content-between gap-2">
+                            <div>
+                                <div class="fw-bold text-primary text-uppercase">
+                                    <?= h($match['ticket_code'] ?? '') ?>
+                                </div>
+
+                                <div class="fw-bold">
+                                    <?= h($match['user_name'] ?? $match['player_name'] ?? '') ?>
+                                </div>
+
+                                <div class="small text-muted">
+                                    <?= h($match['league_name'] ?? 'Liga') ?>
+                                    —
+                                    <?= h($match['round_name'] ?? 'Jornada') ?>
+                                </div>
+                            </div>
+
+                            <div class="text-md-end">
+                                <span class="badge <?= h(qvVerifierStatusClass((string)($match['status'] ?? ''))) ?>">
+                                    <?= h(qvVerifierStatusLabel((string)($match['status'] ?? ''))) ?>
+                                </span>
+
+                                <div class="small text-muted mt-2">
+                                    Tel: <?= h(qvVerifierMaskedPhone($match['phone'] ?? '')) ?>
+                                </div>
+
+                                <div class="small fw-bold">
+                                    Puntos: <?= (int)($match['points'] ?? 0) ?>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+
+            <div class="card-footer bg-light small text-muted">
+                Selecciona el ticket correcto para ver el detalle completo.
+            </div>
+        </div>
+    <?php endif; ?>
 
     <?php if ($ticket): ?>
         <div class="card mb-4 border-0 shadow-sm overflow-hidden">
@@ -237,7 +334,7 @@ $whatsappShareUrl = $shareText !== ''
                 </div>
 
                 <?php if ($whatsappShareUrl !== ''): ?>
-                    <div class="text-center mt-4">
+                    <div class="text-center mt-4 d-flex flex-column flex-md-row gap-2 justify-content-center">
                         <a
                             href="<?= h($whatsappShareUrl) ?>"
                             target="_blank"
@@ -246,6 +343,10 @@ $whatsappShareUrl = $shareText !== ''
                         >
                             <i class="bi bi-whatsapp me-1"></i>
                             Compartir ticket
+                        </a>
+
+                        <a href="/ranking" class="btn btn-outline-primary fw-bold">
+                            Ver ranking
                         </a>
                     </div>
                 <?php endif; ?>
@@ -283,7 +384,6 @@ $whatsappShareUrl = $shareText !== ''
                                 <?php
                                 $myPick = strtoupper((string)($item['selection'] ?? $item['pick'] ?? ''));
                                 $official = strtoupper((string)($item['result_outcome'] ?? ''));
-
                                 $matchStatus = strtoupper((string)($item['match_status'] ?? ''));
 
                                 $hasOfficialResult = $official !== '';
@@ -299,7 +399,6 @@ $whatsappShareUrl = $shareText !== ''
 
                                 $homeScore = $item['home_score'] ?? null;
                                 $awayScore = $item['away_score'] ?? null;
-
                                 $scoreLabel = '-';
 
                                 if (
@@ -348,9 +447,7 @@ $whatsappShareUrl = $shareText !== ''
                                     </td>
 
                                     <td class="fs-5">
-                                        <div>
-                                            <?= $icon ?>
-                                        </div>
+                                        <div><?= $icon ?></div>
 
                                         <div class="small text-muted">
                                             <?= h($matchStatus ?: 'PENDIENTE') ?>

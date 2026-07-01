@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Models;
@@ -162,9 +163,9 @@ class TicketModel
         return $ticket ?: null;
     }
 
-   public function getItemsByTicket(int $ticketId): array
-{
-    $stmt = $this->pdo->prepare('
+    public function getItemsByTicket(int $ticketId): array
+    {
+        $stmt = $this->pdo->prepare('
         SELECT
             ti.*,
             ti.selection AS pick,
@@ -186,12 +187,12 @@ class TicketModel
         ORDER BY m.kickoff_at ASC, m.id ASC
     ');
 
-    $stmt->execute([
-        ':ticket_id' => $ticketId,
-    ]);
+        $stmt->execute([
+            ':ticket_id' => $ticketId,
+        ]);
 
-    return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-}
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
 
 
     public function getTicketsByRound(int $roundId): array
@@ -312,7 +313,7 @@ class TicketModel
         return preg_replace('/\D+/', '', $phone) ?? '';
     }
 
-       private function getClientIp(): string
+    private function getClientIp(): string
     {
         return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
     }
@@ -354,19 +355,214 @@ class TicketModel
         return $ticket ?: null;
     }
 
-    public function getVerifierDataByCode(string $ticketCode): ?array
+ /**
+ * Obtiene datos completos del verificador por código de ticket.
+ *
+ * @param string $ticketCode Código del ticket.
+ * @return array{ticket:array<string,mixed>,items:array<int,array<string,mixed>>,rank:int|null}|null
+ */
+public function getVerifierDataByCode(string $ticketCode): ?array
+{
+    $ticket = $this->findByCode($ticketCode);
+
+    if (!$ticket) {
+        return null;
+    }
+
+    return $this->getVerifierDataByTicketId((int)$ticket['id']);
+}
+
+    /**
+     * Busca tickets para el verificador público.
+     *
+     * Permite buscar por:
+     * - código exacto de ticket
+     * - teléfono normalizado
+     * - nombre del jugador
+     *
+     * @param string $query Texto buscado.
+     * @param string $type Tipo de búsqueda: auto, code, phone, name.
+     * @return array<int,array<string,mixed>>
+     */
+    public function searchForVerifier(string $query, string $type = 'auto'): array
     {
-        $ticket = $this->findByCode($ticketCode);
+        $query = trim($query);
+
+        if ($query === '') {
+            return [];
+        }
+
+        $type = strtolower(trim($type));
+
+        if (!in_array($type, ['auto', 'code', 'phone', 'name'], true)) {
+            $type = 'auto';
+        }
+
+        $normalizedPhone = $this->normalizePhone($query);
+        $likeQuery = '%' . $query . '%';
+        $likePhone = '%' . $normalizedPhone . '%';
+
+        $where = [];
+        $params = [];
+
+        if ($type === 'code') {
+            $where[] = 't.ticket_code = :ticket_code';
+            $params[':ticket_code'] = strtoupper($query);
+        } elseif ($type === 'phone') {
+            $where[] = 't.phone LIKE :phone';
+            $params[':phone'] = $likePhone;
+        } elseif ($type === 'name') {
+            $where[] = '(t.user_name LIKE :user_name OR p.full_name LIKE :player_name)';
+            $params[':user_name'] = $likeQuery;
+            $params[':player_name'] = $likeQuery;
+        } else {
+            /*
+         * Modo automático:
+         * Busca por código, teléfono o nombre sin exigir que el usuario
+         * conozca el tipo exacto de dato.
+         */
+            $where[] = '
+            (
+                t.ticket_code = :auto_ticket_code
+                OR t.phone LIKE :auto_phone
+                OR t.user_name LIKE :auto_user_name
+                OR p.full_name LIKE :auto_player_name
+            )
+        ';
+
+            $params[':auto_ticket_code'] = strtoupper($query);
+            $params[':auto_phone'] = $likePhone;
+            $params[':auto_user_name'] = $likeQuery;
+            $params[':auto_player_name'] = $likeQuery;
+        }
+
+        $stmt = $this->pdo->prepare('
+        SELECT
+            t.id,
+            t.ticket_code,
+            t.round_ticket_number,
+            t.user_name,
+            t.phone,
+            t.total_amount,
+            t.currency,
+            t.status,
+            t.points,
+            t.created_at,
+            r.name AS round_name,
+            r.round_number,
+            r.status AS round_status,
+            l.name AS league_name,
+            p.full_name AS player_name
+        FROM tickets t
+        INNER JOIN rounds r
+            ON r.id = t.round_id
+        INNER JOIN leagues l
+            ON l.id = r.league_id
+        LEFT JOIN players p
+            ON p.id = t.player_id
+        WHERE ' . implode(' AND ', $where) . '
+        ORDER BY t.created_at DESC, t.id DESC
+        LIMIT 12
+    ');
+
+        $stmt->execute($params);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * Obtiene datos completos del verificador por ID de ticket.
+     *
+     * @param int $ticketId ID del ticket.
+     * @return array{ticket:array<string,mixed>,items:array<int,array<string,mixed>>,rank:int|null}|null
+     */
+    public function getVerifierDataByTicketId(int $ticketId): ?array
+    {
+        if ($ticketId <= 0) {
+            return null;
+        }
+
+        $ticket = $this->getById($ticketId);
 
         if (!$ticket) {
             return null;
         }
 
-        $items = $this->getItemsByTicket((int)$ticket['id']);
+        $items = $this->getItemsByTicket($ticketId);
+        $rank = $this->calculateRoundRank((int)$ticket['round_id'], $ticketId);
 
         return [
             'ticket' => $ticket,
             'items' => $items,
+            'rank' => $rank,
         ];
+    }
+
+    /**
+     * Calcula posición del ticket dentro de su jornada.
+     *
+     * Regla simple:
+     * - más puntos = mejor posición
+     * - en empate, ticket más antiguo queda primero
+     * - si sigue empate, ID menor queda primero
+     *
+     * @param int $roundId ID de jornada.
+     * @param int $ticketId ID de ticket.
+     * @return int|null
+     */
+    public function calculateRoundRank(int $roundId, int $ticketId): ?int
+    {
+        if ($roundId <= 0 || $ticketId <= 0) {
+            return null;
+        }
+
+        $currentStmt = $this->pdo->prepare('
+        SELECT id, points, created_at
+        FROM tickets
+        WHERE id = :ticket_id
+          AND round_id = :round_id
+        LIMIT 1
+    ');
+
+        $currentStmt->execute([
+            ':ticket_id' => $ticketId,
+            ':round_id' => $roundId,
+        ]);
+
+        $current = $currentStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$current) {
+            return null;
+        }
+
+        $stmt = $this->pdo->prepare('
+        SELECT COUNT(*) + 1
+        FROM tickets t
+        WHERE t.round_id = :rank_round_id
+          AND (
+                t.points > :current_points
+                OR (
+                    t.points = :same_points
+                    AND t.created_at < :current_created_at
+                )
+                OR (
+                    t.points = :same_points_id
+                    AND t.created_at = :same_created_at
+                    AND t.id < :current_id
+                )
+          )
+    ');
+
+        $stmt->execute([
+            ':rank_round_id' => $roundId,
+            ':current_points' => (int)$current['points'],
+            ':same_points' => (int)$current['points'],
+            ':current_created_at' => (string)$current['created_at'],
+            ':same_points_id' => (int)$current['points'],
+            ':same_created_at' => (string)$current['created_at'],
+            ':current_id' => $ticketId,
+        ]);
+
+        return (int)$stmt->fetchColumn();
     }
 }

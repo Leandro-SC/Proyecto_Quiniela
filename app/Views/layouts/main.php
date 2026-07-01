@@ -186,6 +186,12 @@ $mainContainerClass = $isAdminArea ? 'container-fluid qv-admin-content-wrap' : '
                         </li>
 
                         <li class="nav-item">
+                            <a href="/testimonios" class="nav-link">
+                                Testimonios
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
                             <a class="nav-link <?= $currentPath === '/reglamento' ? 'active' : '' ?>" href="/reglamento">
                                 Reglamento
                             </a>
