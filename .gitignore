@@ -1,0 +1,7 @@
+.env
+*.sql
+/storage/logs/*.log
+/storage/cache/*
+/assets/uploads/tmp/*
+.DS_Store
+Thumbs.db

@@ -21,7 +21,8 @@ $comment = (string)($testimonial['comment'] ?? '');
 $rating = max(1, min(5, (int)($testimonial['rating'] ?? 5)));
 $photoPath = (string)($testimonial['photo_path'] ?? '');
 $displayOrder = (int)($testimonial['display_order'] ?? 0);
-$status = (int)($testimonial['status'] ?? 1) === 1;
+$statusValue = strtoupper((string)($testimonial['status'] ?? 'ACTIVE'));
+$status = $statusValue !== 'INACTIVE';
 ?>
 
 <section class="admin-mobile-page qv-admin-testimonial-form-page">
@@ -75,8 +76,7 @@ $status = (int)($testimonial['status'] ?? 1) === 1;
                                 id="name"
                                 class="form-control"
                                 value="<?= Security::e($name) ?>"
-                                required
-                            >
+                                required>
                         </div>
 
                         <div class="col-12 col-md-6">
@@ -86,8 +86,7 @@ $status = (int)($testimonial['status'] ?? 1) === 1;
                                 name="country"
                                 id="country"
                                 class="form-control"
-                                value="<?= Security::e($country) ?>"
-                            >
+                                value="<?= Security::e($country) ?>">
                         </div>
 
                         <div class="col-12">
@@ -97,8 +96,7 @@ $status = (int)($testimonial['status'] ?? 1) === 1;
                                 id="comment"
                                 class="form-control"
                                 rows="5"
-                                required
-                            ><?= Security::e($comment) ?></textarea>
+                                required><?= Security::e($comment) ?></textarea>
                         </div>
 
                         <div class="col-12 col-md-6">
@@ -120,8 +118,7 @@ $status = (int)($testimonial['status'] ?? 1) === 1;
                                 id="display_order"
                                 class="form-control"
                                 value="<?= $displayOrder ?>"
-                                min="0"
-                            >
+                                min="0">
                         </div>
 
                         <div class="col-12">
@@ -132,8 +129,7 @@ $status = (int)($testimonial['status'] ?? 1) === 1;
                                     name="status"
                                     id="status"
                                     value="1"
-                                    <?= $status ? 'checked' : '' ?>
-                                >
+                                    <?= $status ? 'checked' : '' ?>>
 
                                 <label class="form-check-label fw-bold" for="status">
                                     Testimonio activo
@@ -160,7 +156,7 @@ $status = (int)($testimonial['status'] ?? 1) === 1;
                 </div>
 
                 <div class="qv-admin-form-card-body">
-                    <div class="qv-admin-testimonial-photo-preview">
+                    <div class="qv-admin-testimonial-photo-preview" id="testimonialPhotoPreview">
                         <?php if ($photoPath !== ''): ?>
                             <img src="<?= Security::e($photoPath) ?>" alt="Foto actual">
                         <?php else: ?>
@@ -177,8 +173,7 @@ $status = (int)($testimonial['status'] ?? 1) === 1;
                         name="photo_file"
                         id="photo_file"
                         class="form-control"
-                        accept="image/png,image/jpeg,image/jpg,image/webp"
-                    >
+                        accept="image/png,image/jpeg,image/jpg,image/webp,image/avif">
 
                     <div class="form-text">
                         Recomendado: imagen cuadrada, fondo limpio.
@@ -198,4 +193,50 @@ $status = (int)($testimonial['status'] ?? 1) === 1;
             </div>
         </aside>
     </form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var input = document.getElementById('photo_file');
+        var preview = document.getElementById('testimonialPhotoPreview');
+
+        if (!input || !preview) {
+            return;
+        }
+
+        input.addEventListener('change', function () {
+            var file = input.files && input.files[0] ? input.files[0] : null;
+
+            if (!file) {
+                return;
+            }
+
+            if (!file.type || !file.type.match(/^image\//)) {
+                alert('Selecciona una imagen válida.');
+                input.value = '';
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                alert('La imagen no debe superar los 5 MB.');
+                input.value = '';
+                return;
+            }
+
+            var reader = new FileReader();
+
+            reader.onload = function (event) {
+                preview.innerHTML = '';
+
+                var image = document.createElement('img');
+                image.src = String(event.target.result || '');
+                image.alt = 'Vista previa del testimonio';
+
+                preview.appendChild(image);
+            };
+
+            reader.readAsDataURL(file);
+        });
+    });
+</script>
+
 </section>

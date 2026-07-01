@@ -31,21 +31,65 @@ if (!is_file($configPath)) {
 /** @var array<string,mixed> $config */
 $config = require $configPath;
 
-// --- CAMBIO PARA OKLAHOMA ---
-// Forzamos la zona horaria de Oklahoma (America/Chicago)
-// Esto asegura que date(), time() y strtotime() funcionen correctamente.
-date_default_timezone_set('America/Chicago');
-// ----------------------------
+// Modo mantenimiento simple administrable desde settings.
+// No bloquea el panel admin para permitir desactivarlo.
+try {
+    $requestUri = (string)($_SERVER['REQUEST_URI'] ?? '/');
+    $isAdminRoute = str_starts_with($requestUri, '/admin');
 
-// Cabeceras de seguridad
+    if (!$isAdminRoute && class_exists('\App\Core\Database')) {
+        $pdoMaintenance = \App\Core\Database::getConnection();
+
+        $stmtMaintenance = $pdoMaintenance->prepare('
+            SELECT setting_value
+            FROM settings
+            WHERE setting_key = :setting_key
+            LIMIT 1
+        ');
+
+        $stmtMaintenance->execute([
+            ':setting_key' => 'maintenance_mode',
+        ]);
+
+        $maintenanceMode = (string)($stmtMaintenance->fetchColumn() ?: '0');
+
+        if ($maintenanceMode === '1') {
+            http_response_code(503);
+            echo '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mantenimiento</title></head><body style="font-family:Arial,sans-serif;background:#0f172a;color:#fff;display:grid;place-items:center;min-height:100vh;margin:0;text-align:center;padding:24px;"><main><h1>Estamos en mantenimiento</h1><p>Volveremos pronto. Gracias por tu paciencia.</p></main></body></html>';
+            exit;
+        }
+    }
+} catch (Throwable $e) {
+    error_log('Error verificando modo mantenimiento: ' . $e->getMessage());
+}
+
+// Zona horaria centralizada.
+// Evita valores quemados como America/Chicago dentro del front controller.
+$timezone = (string)($config['app']['timezone'] ?? 'America/Mexico_City');
+
+if ($timezone === '') {
+    $timezone = 'America/Mexico_City';
+}
+
+date_default_timezone_set($timezone);
+
+// Cabeceras de seguridad base.
+// Se mantienen simples para no romper assets actuales.
 $env = $config['app']['env'] ?? 'production';
+
 if ($env === 'production') {
     header('X-Frame-Options: SAMEORIGIN');
     header('X-Content-Type-Options: nosniff');
-    header('X-XSS-Protection: 1; mode=block');
     header('Referrer-Policy: strict-origin-when-cross-origin');
-}
+    header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
 
+    if (
+        (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
+        (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https')
+    ) {
+        header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+    }
+}
 // Iniciar sesión
 Session::start();
 

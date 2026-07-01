@@ -14,7 +14,9 @@ $toValue = Security::e($filters['to'] ?? '');
 
 $totalTickets = (int)($stats['total_tickets'] ?? 0);
 $paidTickets = (int)($stats['paid_tickets'] ?? 0);
-$pendingTickets = max(0, $totalTickets - $paidTickets);
+$pendingTickets = (int)($stats['pending_tickets'] ?? 0);
+$cancelledTickets = (int)($stats['cancelled_tickets'] ?? 0);
+$rejectedTickets = (int)($stats['rejected_tickets'] ?? 0);
 $paidRate = $totalTickets > 0 ? round(($paidTickets / $totalTickets) * 100) : 0;
 
 require __DIR__ . '/../partials/nav.php';
@@ -38,8 +40,7 @@ require __DIR__ . '/../partials/nav.php';
                     name="from"
                     id="from"
                     class="form-control form-control-sm"
-                    value="<?= $fromValue ?>"
-                >
+                    value="<?= $fromValue ?>">
             </div>
 
             <div>
@@ -49,14 +50,20 @@ require __DIR__ . '/../partials/nav.php';
                     name="to"
                     id="to"
                     class="form-control form-control-sm"
-                    value="<?= $toValue ?>"
-                >
+                    value="<?= $toValue ?>">
             </div>
 
             <button type="submit" class="btn btn-primary btn-sm">
                 <i class="bi bi-funnel-fill me-1"></i>
                 Filtrar
             </button>
+
+            <?php if (!empty($filters['has_filter'])): ?>
+                <a href="/admin" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-x-circle me-1"></i>
+                    Limpiar
+                </a>
+            <?php endif; ?>
         </form>
     </header>
 
@@ -135,7 +142,13 @@ require __DIR__ . '/../partials/nav.php';
             <div>
                 <span>Pendientes</span>
                 <strong><?= number_format($pendingTickets) ?></strong>
-                <small>Tickets por revisar</small>
+                <small>
+                    <?php if (($cancelledTickets + $rejectedTickets) > 0): ?>
+                        <?= number_format($cancelledTickets + $rejectedTickets) ?> cancelados/rechazados
+                    <?php else: ?>
+                        Tickets por revisar
+                    <?php endif; ?>
+                </small>
             </div>
         </article>
 

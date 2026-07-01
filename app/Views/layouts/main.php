@@ -15,7 +15,7 @@ declare(strict_types=1);
 $pageTitle = $pageTitle ?? 'Villa Quiniela';
 $metaDescription = $metaDescription ?? 'Participa en la mejor quiniela de Liga MX y gana premios en efectivo.';
 
-$siteName = 'Mickey Quinielass';
+$siteName = 'Mickey Quinielas';
 $siteUrl = 'https://mickeyquinielass.com';
 
 $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
@@ -143,13 +143,13 @@ $mainContainerClass = $isAdminArea ? 'container-fluid qv-admin-content-wrap' : '
     <?php if (!$isAdminArea): ?>
         <nav class="navbar navbar-expand-lg navbar-light-custom navbar-light sticky-top">
             <div class="container">
-                <a class="navbar-brand d-flex align-items-center fw-bold" href="/" aria-label="Ir al inicio de Mickey Quinielass">
+                <a class="navbar-brand d-flex align-items-center fw-bold" href="/" aria-label="Ir al inicio de Mickey Quinielas">
                     <img
                         src="/assets/img/logo_quiniela.png"
                         alt="Villa Quiniela"
                         class="qv-public-logo me-2">
                     <span class="d-none d-sm-inline qv-public-brand-name">
-                        Mickey Quinielass
+                        Mickey Quinielas
                     </span>
                 </a>
 
@@ -234,7 +234,7 @@ $mainContainerClass = $isAdminArea ? 'container-fluid qv-admin-content-wrap' : '
             <div class="container">
                 <div class="qv-footer-card">
                     <div>
-                        <strong>Mickey Quinielass</strong>
+                        <strong>Mickey Quinielas</strong>
                         <span>Pronósticos deportivos para la comunidad latina.</span>
                     </div>
 

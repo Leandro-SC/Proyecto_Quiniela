@@ -15,7 +15,7 @@ use Throwable;
 /**
  * Administración de testimonios.
  *
- * Tabla real utilizada:
+ * Tabla utilizada:
  * - testimonials.photo_path
  * - testimonials.name
  * - testimonials.country
@@ -43,8 +43,8 @@ class TestimonialAdminController extends BaseAdminController
     /**
      * Lista testimonios con búsqueda simple.
      *
-     * @param Request $request
-     * @param Response $response
+     * @param Request $request Petición HTTP.
+     * @param Response $response Respuesta HTTP.
      * @return void
      */
     public function index(Request $request, Response $response): void
@@ -58,8 +58,23 @@ class TestimonialAdminController extends BaseAdminController
         $params = [];
 
         if ($q !== '') {
-            $where[] = '(name LIKE :q OR country LIKE :q OR comment LIKE :q)';
-            $params[':q'] = '%' . $q . '%';
+            /*
+             * No reutilizamos el mismo placeholder varias veces porque
+             * algunos drivers PDO fallan con placeholders duplicados.
+             */
+            $where[] = '
+                (
+                    name LIKE :q_name
+                    OR country LIKE :q_country
+                    OR comment LIKE :q_comment
+                )
+            ';
+
+            $searchValue = '%' . $q . '%';
+
+            $params[':q_name'] = $searchValue;
+            $params[':q_country'] = $searchValue;
+            $params[':q_comment'] = $searchValue;
         }
 
         $sql = '
@@ -100,8 +115,8 @@ class TestimonialAdminController extends BaseAdminController
     /**
      * Muestra formulario de creación.
      *
-     * @param Request $request
-     * @param Response $response
+     * @param Request $request Petición HTTP.
+     * @param Response $response Respuesta HTTP.
      * @return void
      */
     public function create(Request $request, Response $response): void
@@ -118,8 +133,8 @@ class TestimonialAdminController extends BaseAdminController
     /**
      * Guarda un nuevo testimonio.
      *
-     * @param Request $request
-     * @param Response $response
+     * @param Request $request Petición HTTP.
+     * @param Response $response Respuesta HTTP.
      * @return void
      */
     public function store(Request $request, Response $response): void
@@ -130,7 +145,7 @@ class TestimonialAdminController extends BaseAdminController
 
         try {
             $data = $this->sanitizeData($_POST);
-            $photoPath = $this->uploadPhoto('photo_path');
+            $photoPath = $this->uploadPhoto('photo_file');
 
             if ($photoPath !== null) {
                 $data['photo_path'] = $photoPath;
@@ -173,14 +188,19 @@ class TestimonialAdminController extends BaseAdminController
                 ':display_order' => $data['display_order'],
             ]);
 
+            $_SESSION['flash_success'] = 'Testimonio creado correctamente.';
+
             header('Location: /admin/testimonials');
             exit;
         } catch (Throwable $e) {
             error_log('Error creando testimonio: ' . $e->getMessage());
 
+            $testimonial = $_POST;
+            $testimonial['status'] = isset($_POST['status']) ? 'ACTIVE' : 'INACTIVE';
+
             $this->render('admin/testimonials/form', [
                 'pageTitle' => 'Crear testimonio',
-                'testimonial' => $_POST,
+                'testimonial' => $testimonial,
                 'error' => $e->getMessage(),
             ]);
         }
@@ -189,8 +209,8 @@ class TestimonialAdminController extends BaseAdminController
     /**
      * Muestra formulario de edición.
      *
-     * @param Request $request
-     * @param Response $response
+     * @param Request $request Petición HTTP.
+     * @param Response $response Respuesta HTTP.
      * @return void
      */
     public function edit(Request $request, Response $response): void
@@ -208,6 +228,8 @@ class TestimonialAdminController extends BaseAdminController
         $testimonial = $this->findById($id);
 
         if ($testimonial === null) {
+            $_SESSION['flash_error'] = 'El testimonio no existe.';
+
             header('Location: /admin/testimonials');
             exit;
         }
@@ -222,8 +244,8 @@ class TestimonialAdminController extends BaseAdminController
     /**
      * Actualiza un testimonio.
      *
-     * @param Request $request
-     * @param Response $response
+     * @param Request $request Petición HTTP.
+     * @param Response $response Respuesta HTTP.
      * @return void
      */
     public function update(Request $request, Response $response): void
@@ -247,8 +269,12 @@ class TestimonialAdminController extends BaseAdminController
             }
 
             $data = $this->sanitizeData($_POST);
-            $photoPath = $this->uploadPhoto('photo_path');
+            $photoPath = $this->uploadPhoto('photo_file');
 
+            /*
+             * Si no se sube una foto nueva, conservamos la imagen anterior.
+             * Esto evita perder la foto al editar solo texto o estado.
+             */
             if ($photoPath === null) {
                 $photoPath = (string)($existing['photo_path'] ?? '');
             }
@@ -279,6 +305,8 @@ class TestimonialAdminController extends BaseAdminController
                 ':display_order' => $data['display_order'],
             ]);
 
+            $_SESSION['flash_success'] = 'Testimonio actualizado correctamente.';
+
             header('Location: /admin/testimonials');
             exit;
         } catch (Throwable $e) {
@@ -286,6 +314,7 @@ class TestimonialAdminController extends BaseAdminController
 
             $testimonial = $_POST;
             $testimonial['id'] = $id;
+            $testimonial['status'] = isset($_POST['status']) ? 'ACTIVE' : 'INACTIVE';
 
             $this->render('admin/testimonials/form', [
                 'pageTitle' => 'Editar testimonio',
@@ -298,8 +327,8 @@ class TestimonialAdminController extends BaseAdminController
     /**
      * Elimina un testimonio.
      *
-     * @param Request $request
-     * @param Response $response
+     * @param Request $request Petición HTTP.
+     * @param Response $response Respuesta HTTP.
      * @return void
      */
     public function delete(Request $request, Response $response): void
@@ -321,8 +350,11 @@ class TestimonialAdminController extends BaseAdminController
                 $stmt->execute([
                     ':id' => $id,
                 ]);
+
+                $_SESSION['flash_success'] = 'Testimonio eliminado correctamente.';
             } catch (Throwable $e) {
                 error_log('Error eliminando testimonio: ' . $e->getMessage());
+                $_SESSION['flash_error'] = 'No se pudo eliminar el testimonio.';
             }
         }
 
@@ -333,7 +365,7 @@ class TestimonialAdminController extends BaseAdminController
     /**
      * Busca un testimonio por ID.
      *
-     * @param int $id
+     * @param int $id ID del testimonio.
      * @return array<string,mixed>|null
      */
     private function findById(int $id): ?array
@@ -367,7 +399,7 @@ class TestimonialAdminController extends BaseAdminController
     /**
      * Sanitiza y valida datos de formulario.
      *
-     * @param array<string,mixed> $input
+     * @param array<string,mixed> $input Datos recibidos por POST.
      * @return array<string,mixed>
      */
     private function sanitizeData(array $input): array
@@ -376,7 +408,13 @@ class TestimonialAdminController extends BaseAdminController
         $country = Security::cleanText($input['country'] ?? '', 100);
         $comment = trim((string)($input['comment'] ?? ''));
         $rating = (int)($input['rating'] ?? 5);
-        $status = strtoupper(Security::cleanText($input['status'] ?? 'ACTIVE', 20));
+
+        /*
+         * La tabla real usa enum ACTIVE / INACTIVE.
+         * El checkbox solo llega por POST cuando está marcado.
+         */
+        $status = isset($input['status']) ? 'ACTIVE' : 'INACTIVE';
+
         $displayOrder = (int)($input['display_order'] ?? 0);
 
         if ($name === '') {
@@ -399,10 +437,6 @@ class TestimonialAdminController extends BaseAdminController
             $rating = 5;
         }
 
-        if (!in_array($status, ['ACTIVE', 'INACTIVE'], true)) {
-            $status = 'ACTIVE';
-        }
-
         if ($displayOrder < 0) {
             $displayOrder = 0;
         }
@@ -420,7 +454,7 @@ class TestimonialAdminController extends BaseAdminController
     /**
      * Sube foto de testimonio de forma segura.
      *
-     * Solo permite imágenes reales JPEG, PNG o WEBP.
+     * Solo permite imágenes reales JPEG, PNG, WEBP o AVIF.
      *
      * @param string $inputName Nombre del input file.
      * @return string|null Ruta pública de la imagen.
@@ -429,6 +463,7 @@ class TestimonialAdminController extends BaseAdminController
     {
         if (
             !isset($_FILES[$inputName]) ||
+            !is_array($_FILES[$inputName]) ||
             !isset($_FILES[$inputName]['error']) ||
             $_FILES[$inputName]['error'] === UPLOAD_ERR_NO_FILE
         ) {
@@ -446,36 +481,69 @@ class TestimonialAdminController extends BaseAdminController
             throw new RuntimeException('Archivo de imagen inválido.');
         }
 
-        if ($size <= 0 || $size > 2 * 1024 * 1024) {
-            throw new RuntimeException('La foto no debe superar los 2 MB.');
+        if ($size <= 0 || $size > 5 * 1024 * 1024) {
+            throw new RuntimeException('La foto no debe superar los 5 MB.');
         }
 
-        $mimeType = mime_content_type($tmpName);
+        $mimeType = $this->detectMimeType($tmpName);
 
         $allowedMimeTypes = [
             'image/jpeg' => 'jpg',
             'image/png' => 'png',
             'image/webp' => 'webp',
+            'image/avif' => 'avif',
         ];
 
         if (!isset($allowedMimeTypes[$mimeType])) {
-            throw new RuntimeException('Formato no permitido. Usa JPG, PNG o WEBP.');
+            throw new RuntimeException('Formato no permitido. Usa JPG, PNG, WEBP o AVIF.');
         }
 
-        $uploadDir = dirname(__DIR__, 3) . '/assets/uploads/testimonials/';
+        $uploadDir = dirname(__DIR__, 3) . '/assets/uploads/testimonials';
 
-        if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
-            throw new RuntimeException('No se pudo crear el directorio de testimonios.');
+        if (!is_dir($uploadDir)) {
+            if (!mkdir($uploadDir, 0775, true) && !is_dir($uploadDir)) {
+                throw new RuntimeException('No se pudo crear el directorio de testimonios.');
+            }
+        }
+
+        if (!is_writable($uploadDir)) {
+            throw new RuntimeException('La carpeta assets/uploads/testimonials no tiene permisos de escritura.');
         }
 
         $extension = $allowedMimeTypes[$mimeType];
-        $fileName = 'testimonial_' . date('Ymd_His') . '_' . bin2hex(random_bytes(8)) . '.' . $extension;
-        $targetPath = $uploadDir . $fileName;
+        $fileName = 'testimonial-' . date('Ymd-His') . '-' . bin2hex(random_bytes(8)) . '.' . $extension;
+        $targetPath = $uploadDir . '/' . $fileName;
 
         if (!move_uploaded_file($tmpName, $targetPath)) {
             throw new RuntimeException('No se pudo guardar la foto.');
         }
 
         return '/assets/uploads/testimonials/' . $fileName;
+    }
+
+    /**
+     * Detecta MIME real de un archivo.
+     *
+     * @param string $tmpName Archivo temporal.
+     * @return string
+     */
+    private function detectMimeType(string $tmpName): string
+    {
+        if (function_exists('finfo_open')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+
+            if ($finfo) {
+                $mimeType = (string)finfo_file($finfo, $tmpName);
+                finfo_close($finfo);
+
+                return $mimeType;
+            }
+        }
+
+        if (function_exists('mime_content_type')) {
+            return (string)mime_content_type($tmpName);
+        }
+
+        return '';
     }
 }

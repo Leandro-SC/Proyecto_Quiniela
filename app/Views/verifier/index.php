@@ -1,7 +1,72 @@
 <?php
+
+declare(strict_types=1);
+
 if (!function_exists('h')) {
-    function h($s) {
+    /**
+     * Escapa texto para salida HTML segura.
+     *
+     * @param mixed $s Valor a imprimir.
+     * @return string
+     */
+    function h(mixed $s): string
+    {
         return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
+    }
+}
+
+if (!function_exists('qvVerifierPickLabel')) {
+    /**
+     * Traduce L/E/V a texto legible.
+     *
+     * @param string $pick Pronóstico.
+     * @return string
+     */
+    function qvVerifierPickLabel(string $pick): string
+    {
+        return match (strtoupper($pick)) {
+            'L' => 'Local',
+            'E' => 'Empate',
+            'V' => 'Visita',
+            default => '-',
+        };
+    }
+}
+
+if (!function_exists('qvVerifierStatusLabel')) {
+    /**
+     * Traduce estado técnico del ticket a texto legible.
+     *
+     * @param string $status Estado del ticket.
+     * @return string
+     */
+    function qvVerifierStatusLabel(string $status): string
+    {
+        return match (strtoupper($status)) {
+            'PAID' => 'Pagado',
+            'PENDING' => 'Pendiente',
+            'CANCELLED' => 'Cancelado',
+            'REJECTED' => 'Rechazado',
+            default => $status !== '' ? ucfirst(strtolower($status)) : '-',
+        };
+    }
+}
+
+if (!function_exists('qvVerifierStatusClass')) {
+    /**
+     * Devuelve clase visual según estado del ticket.
+     *
+     * @param string $status Estado del ticket.
+     * @return string
+     */
+    function qvVerifierStatusClass(string $status): string
+    {
+        return match (strtoupper($status)) {
+            'PAID' => 'bg-success',
+            'PENDING' => 'bg-warning text-dark',
+            'CANCELLED', 'REJECTED' => 'bg-danger',
+            default => 'bg-secondary',
+        };
     }
 }
 
@@ -11,51 +76,79 @@ $ticketCode = $ticketCode ?? ($searchCode ?? '');
 $error = $error ?? null;
 $rank = $rank ?? null;
 
-function pickLabel(string $pick): string
-{
-    return match (strtoupper($pick)) {
-        'L' => 'Local',
-        'E' => 'Empate',
-        'V' => 'Visita',
-        default => '-',
-    };
+$ticketStatus = strtoupper((string)($ticket['status'] ?? ''));
+$playerName = (string)($ticket['user_name'] ?? $ticket['player_name'] ?? '');
+$ticketCodeResult = (string)($ticket['ticket_code'] ?? '');
+$leagueName = (string)($ticket['league_name'] ?? 'Liga');
+$roundName = (string)($ticket['round_name'] ?? 'Jornada');
+$points = (int)($ticket['points'] ?? 0);
+
+$shareText = '';
+
+if ($ticket) {
+    $shareText = 'Mi ticket de quiniela es ' . $ticketCodeResult . '. Revisa el ranking y resultados.';
 }
+
+$whatsappShareUrl = $shareText !== ''
+    ? 'https://wa.me/?text=' . rawurlencode($shareText)
+    : '';
 ?>
 
-<div class="container py-5" style="max-width: 900px;">
+<div class="container py-5 qv-verifier-page" style="max-width: 980px;">
 
     <div class="text-center mb-4">
-        <h1 class="h3 fw-bold text-uppercase">Verificador de Quiniela</h1>
-        <p class="text-muted">Ingresa tu código de ticket para ver tus resultados.</p>
+        <span class="badge rounded-pill bg-warning text-dark fw-bold px-3 py-2 mb-3">
+            Verificación oficial
+        </span>
+
+        <h1 class="h3 fw-bold text-uppercase mb-2">
+            Verificador de Quiniela
+        </h1>
+
+        <p class="text-muted mb-0">
+            Ingresa tu código de ticket para consultar tus resultados, puntos y posición.
+        </p>
     </div>
 
-    <div class="card shadow-sm border-0 mb-5">
+    <div class="card shadow-sm border-0 mb-5 overflow-hidden">
         <div class="card-body p-4 bg-light">
             <form method="get" action="/verificador" class="row g-3 justify-content-center">
-                <div class="col-12 col-md-9">
+                <div class="col-12 col-md-10">
+                    <label for="ticket_code" class="form-label fw-bold small text-uppercase text-muted">
+                        Código de ticket
+                    </label>
+
                     <div class="input-group input-group-lg">
                         <span class="input-group-text bg-white">
                             <i class="bi bi-ticket-perforated"></i>
                         </span>
 
                         <input
+                            id="ticket_code"
                             type="text"
                             name="ticket_code"
                             class="form-control text-center fw-bold text-uppercase"
                             placeholder="Ej: QV-0001-00001"
                             value="<?= h($ticketCode) ?>"
+                            autocomplete="off"
                             required
                         >
 
                         <button class="btn btn-primary px-4 fw-bold" type="submit">
-                            BUSCAR
+                            <i class="bi bi-search me-1"></i>
+                            Buscar
                         </button>
+                    </div>
+
+                    <div class="form-text text-center mt-2">
+                        El código aparece en el comprobante generado al enviar tu quiniela.
                     </div>
                 </div>
             </form>
 
             <?php if ($error): ?>
                 <div class="alert alert-danger mt-3 text-center mb-0">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
                     <?= h($error) ?>
                 </div>
             <?php endif; ?>
@@ -65,59 +158,102 @@ function pickLabel(string $pick): string
     <?php if ($ticket): ?>
         <div class="card mb-4 border-0 shadow-sm overflow-hidden">
             <div class="card-header bg-dark text-white py-3 text-center">
+                <div class="small text-uppercase text-warning fw-bold mb-1">
+                    Ticket encontrado
+                </div>
+
                 <h2 class="h5 mb-0 text-uppercase">
-                    <?= h($ticket['league_name'] ?? 'Liga') ?>
+                    <?= h($leagueName) ?>
                     —
-                    <?= h($ticket['round_name'] ?? 'Jornada') ?>
+                    <?= h($roundName) ?>
                 </h2>
             </div>
 
-            <div class="card-body text-center bg-white">
-                <div class="row">
-                    <div class="col-6 border-end">
-                        <div class="small text-muted text-uppercase">Jugador</div>
-                        <div class="fw-bold fs-5">
-                            <?= h($ticket['user_name'] ?? $ticket['player_name'] ?? '') ?>
+            <div class="card-body bg-white">
+                <div class="row g-3 text-center">
+                    <div class="col-12 col-md-4">
+                        <div class="p-3 rounded-4 bg-light h-100">
+                            <div class="small text-muted text-uppercase fw-bold">
+                                Jugador
+                            </div>
+
+                            <div class="fw-bold fs-5">
+                                <?= h($playerName) ?>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="col-6">
-                        <div class="small text-muted text-uppercase">Código</div>
-                        <div class="fw-bold fs-5 text-primary">
-                            <?= h($ticket['ticket_code'] ?? '') ?>
+                    <div class="col-12 col-md-4">
+                        <div class="p-3 rounded-4 bg-light h-100">
+                            <div class="small text-muted text-uppercase fw-bold">
+                                Código
+                            </div>
+
+                            <div class="fw-bold fs-5 text-primary text-uppercase">
+                                <?= h($ticketCodeResult) ?>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <div class="p-3 rounded-4 bg-light h-100">
+                            <div class="small text-muted text-uppercase fw-bold">
+                                Estado
+                            </div>
+
+                            <span class="badge <?= h(qvVerifierStatusClass($ticketStatus)) ?> px-3 py-2">
+                                <?= h(qvVerifierStatusLabel($ticketStatus)) ?>
+                            </span>
                         </div>
                     </div>
                 </div>
 
                 <hr>
 
-                <div class="row align-items-center">
-                    <div class="col-4">
-                        <div class="small text-muted text-uppercase">Estado</div>
-                        <div class="fw-bold fs-5">
-                            <?= h($ticket['status'] ?? '-') ?>
+                <div class="row g-3 align-items-center text-center">
+                    <div class="col-6">
+                        <div class="p-3 rounded-4 border">
+                            <div class="small text-muted text-uppercase fw-bold">
+                                Puntos
+                            </div>
+
+                            <div class="display-5 fw-bold text-dark">
+                                <?= $points ?>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="col-4">
-                        <div class="small text-muted text-uppercase">Puntos</div>
-                        <div class="display-5 fw-bold text-dark">
-                            <?= (int)($ticket['points'] ?? 0) ?>
-                        </div>
-                    </div>
+                    <div class="col-6">
+                        <div class="p-3 rounded-4 border">
+                            <div class="small text-muted text-uppercase fw-bold">
+                                Posición
+                            </div>
 
-                    <div class="col-4">
-                        <div class="small text-muted text-uppercase">Posición</div>
-                        <div class="display-5 fw-bold text-primary">
-                            <?= $rank ? '#' . h($rank) : '-' ?>
+                            <div class="display-5 fw-bold text-primary">
+                                <?= $rank ? '#' . h($rank) : '-' ?>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                <?php if ($whatsappShareUrl !== ''): ?>
+                    <div class="text-center mt-4">
+                        <a
+                            href="<?= h($whatsappShareUrl) ?>"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="btn btn-success fw-bold"
+                        >
+                            <i class="bi bi-whatsapp me-1"></i>
+                            Compartir ticket
+                        </a>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
 
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-primary text-white text-center fw-bold text-uppercase">
+        <div class="card border-0 shadow-sm overflow-hidden">
+            <div class="card-header bg-primary text-white text-center fw-bold text-uppercase py-3">
                 Detalle de resultados
             </div>
 
@@ -145,30 +281,35 @@ function pickLabel(string $pick): string
 
                             <?php foreach ($items as $item): ?>
                                 <?php
-                                    $myPick = strtoupper((string)($item['selection'] ?? $item['pick'] ?? ''));
-                                    $official = strtoupper((string)($item['result_outcome'] ?? ''));
+                                $myPick = strtoupper((string)($item['selection'] ?? $item['pick'] ?? ''));
+                                $official = strtoupper((string)($item['result_outcome'] ?? ''));
 
-                                    $matchStatus = strtoupper((string)($item['match_status'] ?? ''));
+                                $matchStatus = strtoupper((string)($item['match_status'] ?? ''));
 
-                                    $hasOfficialResult = $official !== '';
-                                    $isHit = $hasOfficialResult && $myPick === $official;
+                                $hasOfficialResult = $official !== '';
+                                $isHit = $hasOfficialResult && $myPick === $official;
 
-                                    $pickClass = '';
-                                    $icon = '⏳';
+                                $pickClass = '';
+                                $icon = '⏳';
 
-                                    if ($hasOfficialResult) {
-                                        $pickClass = $isHit ? 'bg-success text-white' : 'bg-danger text-white';
-                                        $icon = $isHit ? '✅' : '❌';
-                                    }
+                                if ($hasOfficialResult) {
+                                    $pickClass = $isHit ? 'bg-success text-white' : 'bg-danger text-white';
+                                    $icon = $isHit ? '✅' : '❌';
+                                }
 
-                                    $homeScore = $item['home_score'] ?? null;
-                                    $awayScore = $item['away_score'] ?? null;
+                                $homeScore = $item['home_score'] ?? null;
+                                $awayScore = $item['away_score'] ?? null;
 
-                                    $scoreLabel = '-';
+                                $scoreLabel = '-';
 
-                                    if ($homeScore !== null && $homeScore !== '' && $awayScore !== null && $awayScore !== '') {
-                                        $scoreLabel = (int)$homeScore . ' - ' . (int)$awayScore;
-                                    }
+                                if (
+                                    $homeScore !== null &&
+                                    $homeScore !== '' &&
+                                    $awayScore !== null &&
+                                    $awayScore !== ''
+                                ) {
+                                    $scoreLabel = (int)$homeScore . ' - ' . (int)$awayScore;
+                                }
                                 ?>
 
                                 <tr>
@@ -177,22 +318,26 @@ function pickLabel(string $pick): string
                                             <?= h($item['home_team_name'] ?? '') ?>
                                         </div>
 
-                                        <div class="small text-muted">vs</div>
+                                        <div class="small text-muted">
+                                            vs
+                                        </div>
 
                                         <div class="fw-bold">
                                             <?= h($item['away_team_name'] ?? '') ?>
                                         </div>
                                     </td>
 
-                                    <td class="fw-bold <?= $pickClass ?>">
-                                        <?= h(pickLabel($myPick)) ?>
+                                    <td class="fw-bold <?= h($pickClass) ?>">
+                                        <?= h(qvVerifierPickLabel($myPick)) ?>
+
                                         <div class="small">
                                             <?= h($myPick ?: '-') ?>
                                         </div>
                                     </td>
 
                                     <td class="fw-bold text-muted">
-                                        <?= h($hasOfficialResult ? pickLabel($official) : 'Pendiente') ?>
+                                        <?= h($hasOfficialResult ? qvVerifierPickLabel($official) : 'Pendiente') ?>
+
                                         <div class="small">
                                             <?= h($official ?: '-') ?>
                                         </div>
@@ -203,7 +348,10 @@ function pickLabel(string $pick): string
                                     </td>
 
                                     <td class="fs-5">
-                                        <div><?= $icon ?></div>
+                                        <div>
+                                            <?= $icon ?>
+                                        </div>
+
                                         <div class="small text-muted">
                                             <?= h($matchStatus ?: 'PENDIENTE') ?>
                                         </div>

@@ -2,7 +2,7 @@
     <div class="col-12 col-lg-10">
         <div class="card shadow-sm border-0 mb-5">
             <div class="card-header bg-dark text-white text-center py-4">
-                <h1 class="h3 mb-0 fw-bold text-uppercase">Reglamento Mickey Quinielass</h1>
+                <h1 class="h3 mb-0 fw-bold text-uppercase">Reglamento Mickey Quinielas</h1>
             </div>
             <div class="card-body p-4 p-md-5">
                 

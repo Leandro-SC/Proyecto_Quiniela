@@ -80,19 +80,38 @@ class Request
         return $default;
     }
 
-    /**
-     * Obtener la IP del cliente de forma segura.
-     */
-    public function getClientIp(): string
-    {
-        if (!empty($this->server['HTTP_CLIENT_IP'])) {
-            return (string)$this->server['HTTP_CLIENT_IP'];
-        }
-        if (!empty($this->server['HTTP_X_FORWARDED_FOR'])) {
-            $ips = explode(',', (string)$this->server['HTTP_X_FORWARDED_FOR']);
-            return trim($ips[0]);
-        }
+ /**
+ * Obtiene la IP del cliente de forma conservadora.
+ *
+ * Solo toma X-Forwarded-For si existe un proxy/CDN delante.
+ * Evita confiar ciegamente en cabeceras manipulables por el cliente.
+ *
+ * @return string
+ */
+public function getClientIp(): string
+{
+    $remoteAddr = (string)($this->server['REMOTE_ADDR'] ?? '0.0.0.0');
 
-        return (string)($this->server['REMOTE_ADDR'] ?? '0.0.0.0');
+    $forwardedProto = (string)($this->server['HTTP_X_FORWARDED_PROTO'] ?? '');
+    $forwardedFor = (string)($this->server['HTTP_X_FORWARDED_FOR'] ?? '');
+
+    if ($forwardedProto !== '' && $forwardedFor !== '') {
+        $ips = explode(',', $forwardedFor);
+        $candidateIp = trim((string)($ips[0] ?? ''));
+
+        if (filter_var($candidateIp, FILTER_VALIDATE_IP)) {
+            return $candidateIp;
+        }
     }
+
+    if (filter_var($remoteAddr, FILTER_VALIDATE_IP)) {
+        return $remoteAddr;
+    }
+
+    return '0.0.0.0';
 }
+
+
+}
+
+

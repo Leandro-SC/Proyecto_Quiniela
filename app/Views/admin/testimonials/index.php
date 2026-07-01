@@ -17,7 +17,9 @@ $activeTestimonials = 0;
 $inactiveTestimonials = 0;
 
 foreach ($testimonials as $testimonial) {
-    if ((int)($testimonial['status'] ?? 1) === 1) {
+    $statusValue = strtoupper((string)($testimonial['status'] ?? 'ACTIVE'));
+
+    if ($statusValue === 'ACTIVE') {
         $activeTestimonials++;
     } else {
         $inactiveTestimonials++;
@@ -112,7 +114,8 @@ foreach ($testimonials as $testimonial) {
                 $rating = max(1, min(5, (int)($testimonial['rating'] ?? 5)));
                 $photoPath = (string)($testimonial['photo_path'] ?? '');
                 $displayOrder = (int)($testimonial['display_order'] ?? 0);
-                $status = (int)($testimonial['status'] ?? 1) === 1;
+                $statusValue = strtoupper((string)($testimonial['status'] ?? 'ACTIVE'));
+                $status = $statusValue === 'ACTIVE';
                 ?>
 
                 <article class="qv-admin-testimonial-card">
@@ -172,7 +175,7 @@ foreach ($testimonials as $testimonial) {
         window.qvConfirmDelete(
             '¿Eliminar testimonio?',
             'Este testimonio dejará de mostrarse en la vista pública.',
-            function () {
+            function() {
                 window.enviarFormularioAdmin('/admin/testimonials/delete', {
                     id: id
                 });

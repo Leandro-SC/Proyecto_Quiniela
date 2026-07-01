@@ -46,10 +46,16 @@ class CountryAdminController extends BaseAdminController
     }
 
     /**
-     * Lista países.
+     * Lista países con búsqueda segura.
      *
-     * @param Request $request
-     * @param Response $response
+     * Permite buscar por:
+     * - nombre del país
+     * - código ISO
+     * - nombre externo/API
+     * - moneda
+     *
+     * @param Request $request Petición HTTP.
+     * @param Response $response Respuesta HTTP.
      * @return void
      */
     public function index(Request $request, Response $response): void
@@ -59,40 +65,76 @@ class CountryAdminController extends BaseAdminController
 
         $q = trim((string)($_GET['q'] ?? ''));
 
+        /*
+     * Evitamos caracteres de control y limitamos longitud para prevenir
+     * búsquedas excesivas o entradas mal formadas.
+     */
+        $q = preg_replace('/[\x00-\x1F\x7F]/u', '', $q) ?? '';
+        $q = mb_substr($q, 0, 100);
+
         $where = [];
         $params = [];
 
         if ($q !== '') {
-            $where[] = '(c.name LIKE :q OR c.iso_code LIKE :q OR c.external_country_name LIKE :q)';
-            $params[':q'] = '%' . $q . '%';
+            /*
+         * No reutilizamos el mismo placeholder en varios LIKE.
+         * Algunos entornos PDO/MySQL devuelven HY093 si el mismo placeholder
+         * aparece varias veces en una consulta preparada.
+         */
+            $where[] = '
+            (
+                c.name LIKE :q_name
+                OR c.iso_code LIKE :q_iso
+                OR c.external_country_name LIKE :q_external
+                OR cc.currency_code LIKE :q_currency_code
+                OR cc.currency_symbol LIKE :q_currency_symbol
+            )
+        ';
+
+            $searchValue = '%' . $q . '%';
+
+            $params[':q_name'] = $searchValue;
+            $params[':q_iso'] = $searchValue;
+            $params[':q_external'] = $searchValue;
+            $params[':q_currency_code'] = $searchValue;
+            $params[':q_currency_symbol'] = $searchValue;
         }
 
         $sql = '
-            SELECT
-                c.id,
-                c.name,
-                c.iso_code,
-                c.flag_path,
-                c.external_country_name,
-                c.is_active,
-                c.created_at,
-                c.updated_at,
-                cc.currency_code,
-                cc.currency_symbol
-            FROM countries c
-            LEFT JOIN country_currency cc ON cc.country_code = c.iso_code
-        ';
+        SELECT
+            c.id,
+            c.name,
+            c.iso_code,
+            c.flag_path,
+            c.external_country_name,
+            c.is_active,
+            c.created_at,
+            c.updated_at,
+            cc.currency_code,
+            cc.currency_symbol
+        FROM countries c
+        LEFT JOIN country_currency cc
+            ON cc.country_code = c.iso_code
+    ';
 
         if ($where !== []) {
             $sql .= ' WHERE ' . implode(' AND ', $where);
         }
 
-        $sql .= ' ORDER BY c.name ASC';
+        $sql .= ' ORDER BY c.name ASC, c.id ASC';
 
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
 
-        $countries = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $countries = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Throwable $e) {
+            error_log('Error buscando países: ' . $e->getMessage());
+
+            $_SESSION['flash_error'] = 'No se pudo realizar la búsqueda de países.';
+
+            $countries = [];
+        }
 
         $this->render('admin/countries/index', [
             'pageTitle' => 'Admin · Países',
@@ -102,6 +144,7 @@ class CountryAdminController extends BaseAdminController
             ],
         ]);
     }
+
 
     /**
      * Muestra formulario de creación.
@@ -326,10 +369,13 @@ class CountryAdminController extends BaseAdminController
     }
 
     /**
-     * Elimina o desactiva país si está en uso.
+     * Elimina un país o lo desactiva si está en uso.
      *
-     * @param Request $request
-     * @param Response $response
+     * Si el país tiene ligas o equipos asociados, no se elimina físicamente.
+     * Solo se marca como inactivo para proteger la integridad histórica.
+     *
+     * @param Request $request Petición HTTP.
+     * @param Response $response Respuesta HTTP.
      * @return void
      */
     public function delete(Request $request, Response $response): void
@@ -341,6 +387,8 @@ class CountryAdminController extends BaseAdminController
         $id = (int)($_POST['id'] ?? 0);
 
         if ($id <= 0) {
+            $_SESSION['flash_error'] = 'País inválido.';
+
             header('Location: /admin/countries');
             exit;
         }
@@ -349,61 +397,77 @@ class CountryAdminController extends BaseAdminController
             $country = $this->findCountryById($id);
 
             if ($country === null) {
+                $_SESSION['flash_error'] = 'El país no existe.';
+
                 header('Location: /admin/countries');
                 exit;
             }
 
+            /*
+         * Usamos placeholders diferentes para evitar error HY093
+         * en entornos PDO que no permiten reutilizar el mismo nombre.
+         */
             $usedStmt = $this->pdo->prepare('
-                SELECT
-                    (
-                        SELECT COUNT(*) FROM leagues WHERE country_id = :id
-                    ) +
-                    (
-                        SELECT COUNT(*) FROM teams WHERE country_id = :id
-                    ) AS total_used
-            ');
+            SELECT
+                (
+                    SELECT COUNT(*)
+                    FROM leagues
+                    WHERE country_id = :league_country_id
+                ) +
+                (
+                    SELECT COUNT(*)
+                    FROM teams
+                    WHERE country_id = :team_country_id
+                ) AS total_used
+        ');
 
             $usedStmt->execute([
-                ':id' => $id,
+                ':league_country_id' => $id,
+                ':team_country_id' => $id,
             ]);
 
             $isUsed = (int)$usedStmt->fetchColumn() > 0;
 
             if ($isUsed) {
                 $stmt = $this->pdo->prepare('
-                    UPDATE countries
-                    SET is_active = 0,
-                        updated_at = NOW()
-                    WHERE id = :id
-                    LIMIT 1
-                ');
+                UPDATE countries
+                SET
+                    is_active = 0,
+                    updated_at = NOW()
+                WHERE id = :id
+                LIMIT 1
+            ');
 
                 $stmt->execute([
                     ':id' => $id,
                 ]);
+
+                $_SESSION['flash_success'] = 'El país está en uso, por eso fue desactivado en lugar de eliminarse.';
             } else {
                 $this->pdo->beginTransaction();
 
                 $deleteCurrency = $this->pdo->prepare('
-                    DELETE FROM country_currency
-                    WHERE country_code = :country_code
-                ');
+                DELETE FROM country_currency
+                WHERE country_code = :country_code
+            ');
 
                 $deleteCurrency->execute([
                     ':country_code' => strtoupper((string)$country['iso_code']),
                 ]);
 
                 $deleteCountry = $this->pdo->prepare('
-                    DELETE FROM countries
-                    WHERE id = :id
-                    LIMIT 1
-                ');
+                DELETE FROM countries
+                WHERE id = :id
+                LIMIT 1
+            ');
 
                 $deleteCountry->execute([
                     ':id' => $id,
                 ]);
 
                 $this->pdo->commit();
+
+                $_SESSION['flash_success'] = 'País eliminado correctamente.';
             }
         } catch (Throwable $e) {
             if ($this->pdo->inTransaction()) {
@@ -411,6 +475,8 @@ class CountryAdminController extends BaseAdminController
             }
 
             error_log('Error eliminando país: ' . $e->getMessage());
+
+            $_SESSION['flash_error'] = 'No se pudo eliminar o desactivar el país.';
         }
 
         header('Location: /admin/countries');
@@ -565,7 +631,7 @@ class CountryAdminController extends BaseAdminController
             throw new RuntimeException('La bandera no debe superar 1 MB.');
         }
 
-        $mimeType = mime_content_type($tmpName);
+        $mimeType = $this->detectMimeType($tmpName);
 
         $allowedMimeTypes = [
             'image/jpeg' => 'jpg',
@@ -593,5 +659,31 @@ class CountryAdminController extends BaseAdminController
         }
 
         return '/assets/uploads/flags/' . $fileName;
+    }
+
+    /**
+     * Detecta el MIME real de un archivo subido.
+     *
+     * @param string $tmpName Ruta temporal del archivo.
+     * @return string
+     */
+    private function detectMimeType(string $tmpName): string
+    {
+        if (function_exists('finfo_open')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+
+            if ($finfo) {
+                $mimeType = (string)finfo_file($finfo, $tmpName);
+                finfo_close($finfo);
+
+                return $mimeType;
+            }
+        }
+
+        if (function_exists('mime_content_type')) {
+            return (string)mime_content_type($tmpName);
+        }
+
+        return '';
     }
 }

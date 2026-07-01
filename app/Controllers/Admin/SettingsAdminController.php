@@ -11,10 +11,21 @@ use PDO;
 use RuntimeException;
 use Throwable;
 
+/**
+ * Controlador de configuración general del sistema.
+ *
+ * Centraliza los valores administrables de marca, negocio, contacto,
+ * fondos públicos y modo mantenimiento usando la tabla settings.
+ */
 class SettingsAdminController extends BaseAdminController
 {
     private PDO $pdo;
 
+    /**
+     * Inicializa la conexión a base de datos.
+     *
+     * @return void
+     */
     private function boot(): void
     {
         if (!isset($this->pdo)) {
@@ -22,6 +33,13 @@ class SettingsAdminController extends BaseAdminController
         }
     }
 
+    /**
+     * Muestra el formulario de configuración.
+     *
+     * @param Request $request Petición HTTP.
+     * @param Response $response Respuesta HTTP.
+     * @return void
+     */
     public function index(Request $request, Response $response): void
     {
         $this->requireAdmin();
@@ -35,20 +53,36 @@ class SettingsAdminController extends BaseAdminController
         ]);
     }
 
+    /**
+     * Guarda la configuración general del sistema.
+     *
+     * @param Request $request Petición HTTP.
+     * @param Response $response Respuesta HTTP.
+     * @return void
+     */
     public function update(Request $request, Response $response): void
     {
         $this->requireAdmin();
+        $this->requireValidCsrf();
         $this->boot();
 
         try {
             $data = $this->sanitizeSettingsData($_POST);
 
+            $this->pdo->beginTransaction();
+
             foreach ($data as $key => $value) {
-                $this->upsertSetting($key, $value);
+                $this->upsertSetting((string)$key, (string)$value);
             }
+
+            $this->pdo->commit();
 
             $_SESSION['flash_success'] = 'Configuración actualizada correctamente.';
         } catch (Throwable $e) {
+            if (isset($this->pdo) && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
             error_log('Error actualizando settings: ' . $e->getMessage());
             $_SESSION['flash_error'] = $e->getMessage();
         }
@@ -57,22 +91,27 @@ class SettingsAdminController extends BaseAdminController
         exit;
     }
 
+    /**
+     * Obtiene settings existentes combinados con valores por defecto.
+     *
+     * @return array<string,string>
+     */
     private function getSettings(): array
     {
         $settings = $this->defaultSettings();
 
         try {
             $stmt = $this->pdo->query('
-                SELECT `key`, `value`
+                SELECT setting_key, setting_value
                 FROM settings
-                ORDER BY `key` ASC
+                ORDER BY setting_key ASC
             ');
 
             $rows = $stmt ? ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
 
             foreach ($rows as $row) {
-                $key = (string)($row['key'] ?? '');
-                $value = (string)($row['value'] ?? '');
+                $key = (string)($row['setting_key'] ?? '');
+                $value = (string)($row['setting_value'] ?? '');
 
                 if ($key !== '') {
                     $settings[$key] = $value;
@@ -82,15 +121,31 @@ class SettingsAdminController extends BaseAdminController
             error_log('Error leyendo settings: ' . $e->getMessage());
         }
 
+        if (($settings['whatsapp_phone'] ?? '') === '' && ($settings['contact_whatsapp_number'] ?? '') !== '') {
+            $settings['whatsapp_phone'] = (string)$settings['contact_whatsapp_number'];
+        }
+
+        if (($settings['contact_whatsapp_number'] ?? '') === '' && ($settings['whatsapp_phone'] ?? '') !== '') {
+            $settings['contact_whatsapp_number'] = (string)$settings['whatsapp_phone'];
+        }
+
         return $settings;
     }
 
+    /**
+     * Define valores por defecto para evitar pantallas vacías.
+     *
+     * @return array<string,string>
+     */
     private function defaultSettings(): array
     {
         return [
             'site_name' => 'Quinielas Villa',
             'site_description' => 'Sistema de quinielas deportivas',
+            'site_logo' => '/assets/img/logo_quiniela.png',
+            'site_favicon' => '/assets/img/logo_quiniela.png',
             'whatsapp_phone' => '',
+            'contact_whatsapp_number' => '',
             'default_country' => 'MX',
             'default_currency' => 'MXN',
             'ticket_default_cost_mxn' => '200.00',
@@ -109,31 +164,51 @@ class SettingsAdminController extends BaseAdminController
         ];
     }
 
+    /**
+     * Valida y normaliza los valores enviados desde el formulario.
+     *
+     * @param array<string,mixed> $input Datos enviados por POST.
+     * @return array<string,string>
+     */
     private function sanitizeSettingsData(array $input): array
     {
         $siteName = trim((string)($input['site_name'] ?? 'Quinielas Villa'));
         $siteDescription = trim((string)($input['site_description'] ?? ''));
-        $whatsappPhone = preg_replace('/\D+/', '', (string)($input['whatsapp_phone'] ?? '')) ?? '';
+
+        // Compatibilidad: el sistema tiene dos claves históricas para WhatsApp.
+        // El formulario usa whatsapp_phone, pero el frontend puede leer contact_whatsapp_number.
+        $currentSettings = $this->getSettings();
+        $whatsappInput = (string)($input['whatsapp_phone'] ?? '');
+
+        if (trim($whatsappInput) === '') {
+            $whatsappInput = (string)($currentSettings['whatsapp_phone'] ?? $currentSettings['contact_whatsapp_number'] ?? '');
+        }
+
+        $whatsappPhone = $this->normalizePhone($whatsappInput);
+        $supportPhone = $this->normalizePhone((string)($input['support_phone'] ?? ''));
 
         $defaultCountry = strtoupper(trim((string)($input['default_country'] ?? 'MX')));
         $defaultCurrency = strtoupper(trim((string)($input['default_currency'] ?? 'MXN')));
 
-        $ticketCostMxn = (float)($input['ticket_default_cost_mxn'] ?? 200.00);
-        $ticketCostUsd = (float)($input['ticket_default_cost_usd'] ?? 10.00);
+        $ticketCostMxn = $this->normalizeMoney($input['ticket_default_cost_mxn'] ?? 200.00, 200.00);
+        $ticketCostUsd = $this->normalizeMoney($input['ticket_default_cost_usd'] ?? 10.00, 10.00);
 
-        $pool = (float)($input['prize_pool_percent'] ?? 45.00);
-        $first = (float)($input['first_place_percent'] ?? 30.00);
-        $second = (float)($input['second_place_percent'] ?? 15.00);
+        $pool = $this->normalizePercent($input['prize_pool_percent'] ?? 45.00, 45.00);
+        $first = $this->normalizePercent($input['first_place_percent'] ?? 30.00, 30.00);
+        $second = $this->normalizePercent($input['second_place_percent'] ?? 15.00, 15.00);
 
         $termsUrl = trim((string)($input['terms_url'] ?? ''));
         $privacyUrl = trim((string)($input['privacy_url'] ?? ''));
         $supportEmail = trim((string)($input['support_email'] ?? ''));
-        $supportPhone = trim((string)($input['support_phone'] ?? ''));
 
         $maintenanceMode = isset($input['maintenance_mode']) ? '1' : '0';
 
-        $currentHeroDesktop = trim((string)($input['current_public_hero_bg_desktop'] ?? ''));
-        $currentHeroMobile = trim((string)($input['current_public_hero_bg_mobile'] ?? ''));
+        $currentHeroDesktop = $this->sanitizeCurrentAssetPath(
+            (string)($input['current_public_hero_bg_desktop'] ?? '')
+        );
+        $currentHeroMobile = $this->sanitizeCurrentAssetPath(
+            (string)($input['current_public_hero_bg_mobile'] ?? '')
+        );
 
         $publicHeroBgDesktop = $this->uploadSettingImage(
             'public_hero_bg_desktop_file',
@@ -153,20 +228,18 @@ class SettingsAdminController extends BaseAdminController
             throw new RuntimeException('El nombre del sitio es obligatorio.');
         }
 
+        // No bloqueamos el guardado completo si WhatsApp está vacío.
+        // Esto permite activar mantenimiento o guardar fondos aunque el negocio lo complete después.
+        if ($supportEmail !== '' && !filter_var($supportEmail, FILTER_VALIDATE_EMAIL)) {
+            throw new RuntimeException('El correo de soporte no tiene un formato válido.');
+        }
+
         if ($defaultCountry === '') {
             $defaultCountry = 'MX';
         }
 
         if ($defaultCurrency === '') {
             $defaultCurrency = 'MXN';
-        }
-
-        if ($ticketCostMxn <= 0) {
-            $ticketCostMxn = 200.00;
-        }
-
-        if ($ticketCostUsd <= 0) {
-            $ticketCostUsd = 10.00;
         }
 
         if ($pool <= 0 || $pool > 100) {
@@ -186,6 +259,7 @@ class SettingsAdminController extends BaseAdminController
             'site_name' => $siteName,
             'site_description' => $siteDescription,
             'whatsapp_phone' => $whatsappPhone,
+            'contact_whatsapp_number' => $whatsappPhone,
             'default_country' => $defaultCountry,
             'default_currency' => $defaultCurrency,
             'ticket_default_cost_mxn' => number_format($ticketCostMxn, 2, '.', ''),
@@ -204,6 +278,84 @@ class SettingsAdminController extends BaseAdminController
         ];
     }
 
+    /**
+     * Normaliza teléfonos dejando solo dígitos.
+     *
+     * @param string $phone Teléfono recibido.
+     * @return string
+     */
+    private function normalizePhone(string $phone): string
+    {
+        return preg_replace('/\D+/', '', $phone) ?? '';
+    }
+
+    /**
+     * Normaliza importes monetarios.
+     *
+     * @param mixed $value Valor recibido.
+     * @param float $default Valor por defecto.
+     * @return float
+     */
+    private function normalizeMoney(mixed $value, float $default): float
+    {
+        $amount = (float)$value;
+
+        return $amount > 0 ? $amount : $default;
+    }
+
+    /**
+     * Normaliza porcentajes.
+     *
+     * @param mixed $value Valor recibido.
+     * @param float $default Valor por defecto.
+     * @return float
+     */
+    private function normalizePercent(mixed $value, float $default): float
+    {
+        $percent = (float)$value;
+
+        if ($percent < 0 || $percent > 100) {
+            return $default;
+        }
+
+        return $percent;
+    }
+
+    /**
+     * Limpia rutas actuales de imágenes para evitar rutas externas o traversal.
+     *
+     * @param string $path Ruta actual guardada.
+     * @return string
+     */
+    private function sanitizeCurrentAssetPath(string $path): string
+    {
+        $path = trim($path);
+
+        if ($path === '') {
+            return '';
+        }
+
+        if (!str_starts_with($path, '/assets/')) {
+            return '';
+        }
+
+        if (str_contains($path, '..')) {
+            return '';
+        }
+
+        return $path;
+    }
+
+    /**
+     * Sube una imagen de configuración y devuelve su ruta pública.
+     *
+     * Si no se sube archivo nuevo, conserva el valor actual.
+     *
+     * @param string $fieldName Nombre del input file.
+     * @param string $currentValue Ruta pública actual.
+     * @param string $prefix Prefijo para el archivo generado.
+     * @return string
+     */
     private function uploadSettingImage(string $fieldName, string $currentValue, string $prefix): string
     {
         if (
@@ -230,16 +382,7 @@ class SettingsAdminController extends BaseAdminController
             throw new RuntimeException('La imagen no debe pesar más de 5MB.');
         }
 
-        $mime = '';
-
-        if (function_exists('finfo_open')) {
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-
-            if ($finfo) {
-                $mime = (string)finfo_file($finfo, $tmpName);
-                finfo_close($finfo);
-            }
-        }
+        $mime = $this->detectMimeType($tmpName);
 
         $allowed = [
             'image/jpeg' => 'jpg',
@@ -253,7 +396,6 @@ class SettingsAdminController extends BaseAdminController
         }
 
         $extension = $allowed[$mime];
-
         $projectRoot = dirname(__DIR__, 3);
         $uploadDir = $projectRoot . '/assets/img/backgrounds';
 
@@ -268,7 +410,7 @@ class SettingsAdminController extends BaseAdminController
         }
 
         $safePrefix = preg_replace('/[^a-z0-9\-_]+/i', '-', $prefix) ?: 'hero';
-        $filename = $safePrefix . '-' . date('Ymd-His') . '-' . bin2hex(random_bytes(4)) . '.' . $extension;
+        $filename = strtolower($safePrefix) . '-' . date('Ymd-His') . '-' . bin2hex(random_bytes(4)) . '.' . $extension;
         $targetPath = $uploadDir . '/' . $filename;
 
         if (!move_uploaded_file($tmpName, $targetPath)) {
@@ -278,32 +420,160 @@ class SettingsAdminController extends BaseAdminController
         return '/assets/img/backgrounds/' . $filename;
     }
 
+    /**
+     * Detecta el MIME real de un archivo temporal.
+     *
+     * @param string $tmpName Ruta temporal.
+     * @return string
+     */
+    private function detectMimeType(string $tmpName): string
+    {
+        if (function_exists('finfo_open')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+
+            if ($finfo) {
+                $mime = (string)finfo_file($finfo, $tmpName);
+                finfo_close($finfo);
+
+                return $mime;
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * Inserta o actualiza un setting usando las columnas reales de la tabla.
+     *
+     * @param string $key Clave de configuración.
+     * @param string $value Valor de configuración.
+     * @return void
+     */
     private function upsertSetting(string $key, string $value): void
     {
         $stmt = $this->pdo->prepare('
             INSERT INTO settings (
-                `key`,
-                `value`,
+                setting_key,
+                group_name,
+                setting_value,
+                setting_type,
+                is_public,
                 created_at,
                 updated_at
             )
             VALUES (
                 :setting_key,
+                :group_name,
                 :setting_value,
+                :setting_type,
+                :is_public,
                 NOW(),
                 NOW()
             )
             ON DUPLICATE KEY UPDATE
-                `value` = VALUES(`value`),
+                group_name = VALUES(group_name),
+                setting_value = VALUES(setting_value),
+                setting_type = VALUES(setting_type),
+                is_public = VALUES(is_public),
                 updated_at = NOW()
         ');
 
         $stmt->execute([
             ':setting_key' => $key,
+            ':group_name' => $this->resolveSettingGroup($key),
             ':setting_value' => $value,
+            ':setting_type' => $this->resolveSettingType($key),
+            ':is_public' => $this->isPublicSetting($key) ? 1 : 0,
         ]);
     }
 
+    /**
+     * Clasifica un setting para mantener la tabla ordenada.
+     *
+     * @param string $key Clave de configuración.
+     * @return string
+     */
+    private function resolveSettingGroup(string $key): string
+    {
+        if (str_starts_with($key, 'public_hero_') || str_contains($key, 'logo') || str_contains($key, 'favicon')) {
+            return 'design';
+        }
+
+        if (str_contains($key, 'whatsapp') || str_contains($key, 'support') || str_contains($key, 'contact')) {
+            return 'contact';
+        }
+
+        if (str_contains($key, 'ticket') || str_contains($key, 'prize') || str_contains($key, 'place_percent')) {
+            return 'business';
+        }
+
+        if (str_contains($key, 'seo') || str_contains($key, 'url') || str_contains($key, 'terms') || str_contains($key, 'privacy')) {
+            return 'seo';
+        }
+
+        if (str_contains($key, 'maintenance')) {
+            return 'system';
+        }
+
+        return 'general';
+    }
+
+    /**
+     * Define el tipo del setting según su clave.
+     *
+     * @param string $key Clave de configuración.
+     * @return string
+     */
+    private function resolveSettingType(string $key): string
+    {
+        if (str_contains($key, 'bg') || str_contains($key, 'image') || str_contains($key, 'logo') || str_contains($key, 'favicon')) {
+            return 'IMAGE';
+        }
+
+        if (str_contains($key, 'url')) {
+            return 'URL';
+        }
+
+        if (str_contains($key, 'cost') || str_contains($key, 'percent') || str_contains($key, 'opacity')) {
+            return 'NUMBER';
+        }
+
+        if (str_contains($key, 'description') || str_contains($key, 'comment')) {
+            return 'TEXTAREA';
+        }
+
+        if (str_contains($key, 'maintenance')) {
+            return 'BOOLEAN';
+        }
+
+        return 'TEXT';
+    }
+
+    /**
+     * Determina si un setting puede exponerse al frontend público.
+     *
+     * @param string $key Clave de configuración.
+     * @return bool
+     */
+    private function isPublicSetting(string $key): bool
+    {
+        $privateKeys = [
+            'maintenance_mode',
+            'ticket_default_cost_mxn',
+            'ticket_default_cost_usd',
+            'prize_pool_percent',
+            'first_place_percent',
+            'second_place_percent',
+        ];
+
+        return !in_array($key, $privateKeys, true);
+    }
+
+    /**
+     * Lista países activos para select del formulario.
+     *
+     * @return array<int,array<string,mixed>>
+     */
     private function getCountries(): array
     {
         try {
@@ -321,6 +591,11 @@ class SettingsAdminController extends BaseAdminController
         }
     }
 
+    /**
+     * Lista monedas disponibles para select del formulario.
+     *
+     * @return array<int,array<string,mixed>>
+     */
     private function getCurrencies(): array
     {
         try {

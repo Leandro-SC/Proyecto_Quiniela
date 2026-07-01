@@ -523,9 +523,9 @@ private function getPublicSettings(): array
         $pdo = Database::getConnection();
 
         $stmt = $pdo->query("
-            SELECT `key`, `value`
+            SELECT setting_key, setting_value
             FROM settings
-            WHERE `key` IN (
+            WHERE setting_key IN (
                 'public_hero_bg_desktop',
                 'public_hero_bg_mobile',
                 'public_hero_overlay_opacity'
@@ -535,8 +535,8 @@ private function getPublicSettings(): array
         $rows = $stmt ? ($stmt->fetchAll(\PDO::FETCH_ASSOC) ?: []) : [];
 
         foreach ($rows as $row) {
-            $key = (string)($row['key'] ?? '');
-            $value = (string)($row['value'] ?? '');
+            $key = (string)($row['setting_key'] ?? '');
+            $value = (string)($row['setting_value'] ?? '');
 
             if ($key !== '' && array_key_exists($key, $defaults)) {
                 $defaults[$key] = $value;

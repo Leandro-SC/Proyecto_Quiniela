@@ -108,11 +108,11 @@ $menuItems = [
     <div class="qv-admin-sidebar-header">
         <a href="/admin" class="qv-admin-sidebar-brand">
             <span class="qv-admin-brand-mark">
-                <img src="/assets/img/logo_quiniela.png" alt="Mickey Quinielass">
+                <img src="/assets/img/logo_quiniela.png" alt="Mickey Quinielas">
             </span>
 
             <span class="qv-admin-brand-copy">
-                <strong>Mickey Quinielass</strong>
+                <strong>Mickey Quinielas</strong>
                 <small>Panel administrador</small>
             </span>
         </a>
