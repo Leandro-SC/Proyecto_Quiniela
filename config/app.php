@@ -17,7 +17,7 @@ return [
         // Debug: Convierte el valor del .env a booleano real
         'debug'    => filter_var($_ENV['APP_DEBUG'] ?? false, FILTER_VALIDATE_BOOLEAN),
 
-        // URL: Lee del .env (ej: https://quinielasvillas.com)
+        // URL: Lee del .env (ej: https://mickeyquinielass.com)
         'url'      => $_ENV['APP_URL'] ?? 'http://localhost',
 
         'timezone' => 'America/Mexico_City',

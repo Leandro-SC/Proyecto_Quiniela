@@ -17,10 +17,14 @@ $e = static function (mixed $value): string {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 };
 
+$currentRound = is_array($currentRound ?? null) ? $currentRound : [];
+$selectedLeagueData = is_array($selectedLeagueData ?? null) ? $selectedLeagueData : [];
+$activeLeagues = is_array($activeLeagues ?? null) ? $activeLeagues : [];
+
 $ticketCostValue = isset($ticketCost) ? (float)$ticketCost : 10.0;
 $currencyCode = (string)($geoCurrencyCode ?? 'USD');
 $currentSlug = (string)($selectedLeague ?? 'liga-mx');
-$displayLeagues = $activeLeagues ?? [];
+$displayLeagues = $activeLeagues;
 
 $leagueLabel = (string)($selectedLeagueData['name'] ?? 'Quiniela');
 $roundTitle = (string)($currentRound['custom_title'] ?? ($currentRound['name'] ?? 'Jornada Actual'));
@@ -118,21 +122,45 @@ $ticketCostLabel = (string)($ticketCostLabel ?? ('$' . number_format($ticketCost
 // Fondo dinámico preparado para backend
 // =====================================================
 
-$heroBackground = '';
+$publicSettings = $publicSettings ?? [];
 
-if (!empty($selectedLeagueData['image_background'])) {
-    $heroBackground = (string)$selectedLeagueData['image_background'];
-} elseif (!empty($selectedLeagueData['image_banner'])) {
-    $heroBackground = (string)$selectedLeagueData['image_banner'];
-} elseif (!empty($currentRound['image_background'])) {
-    $heroBackground = (string)$currentRound['image_background'];
+$heroBackgroundDesktop = trim((string)($publicSettings['public_hero_bg_desktop'] ?? ''));
+$heroBackgroundMobile = trim((string)($publicSettings['public_hero_bg_mobile'] ?? ''));
+$heroOverlayOpacity = trim((string)($publicSettings['public_hero_overlay_opacity'] ?? '0.72'));
+
+if ($heroBackgroundDesktop === '') {
+    if (!empty($selectedLeagueData['image_background'])) {
+        $heroBackgroundDesktop = (string)$selectedLeagueData['image_background'];
+    } elseif (!empty($selectedLeagueData['image_banner'])) {
+        $heroBackgroundDesktop = (string)$selectedLeagueData['image_banner'];
+    } elseif (!empty($currentRound['image_background'])) {
+        $heroBackgroundDesktop = (string)$currentRound['image_background'];
+    }
 }
 
-$heroStyle = '';
-
-if ($heroBackground !== '') {
-    $heroStyle = "--hero-bg-image: url('" . $e($heroBackground) . "');";
+if ($heroBackgroundMobile === '') {
+    $heroBackgroundMobile = $heroBackgroundDesktop;
 }
+
+$heroOverlayOpacityFloat = (float)$heroOverlayOpacity;
+
+if ($heroOverlayOpacityFloat < 0.35 || $heroOverlayOpacityFloat > 0.95) {
+    $heroOverlayOpacityFloat = 0.72;
+}
+
+$heroStyleParts = [
+    '--hero-overlay-opacity: ' . $heroOverlayOpacityFloat,
+];
+
+if ($heroBackgroundDesktop !== '') {
+    $heroStyleParts[] = "--hero-bg-desktop: url('" . $e($heroBackgroundDesktop) . "')";
+}
+
+if ($heroBackgroundMobile !== '') {
+    $heroStyleParts[] = "--hero-bg-mobile: url('" . $e($heroBackgroundMobile) . "')";
+}
+
+$heroStyle = implode('; ', $heroStyleParts) . ';';
 
 $hasCurrentRound = !empty($currentRound) && is_array($currentRound);
 $hasMatches = $hasCurrentRound && !empty($matches);
@@ -207,200 +235,193 @@ $hasMatches = $hasCurrentRound && !empty($matches);
     data-round-id="<?= $hasCurrentRound ? (int)$currentRound['id'] : 0 ?>"
     data-whatsapp-phone="<?= $e((string)($whatsappPhone ?? '')) ?>">
 
-   <div class="ch-hero text-center position-relative" <?= $heroStyle !== '' ? 'style="' . $heroStyle . '"' : '' ?>>
-    <div class="ch-hero-overlay">
-        <div class="hero-scene hero-scene--premium" aria-hidden="true">
-            <div class="hero-scene__stadium-light hero-scene__stadium-light--left"></div>
-            <div class="hero-scene__stadium-light hero-scene__stadium-light--right"></div>
+    <div class="ch-hero text-center position-relative" <?= $heroStyle !== '' ? 'style="' . $heroStyle . '"' : '' ?>>
+        <div class="ch-hero-overlay">
+            <div class="hero-scene hero-scene--premium" aria-hidden="true">
+                <div class="hero-scene__stadium-light hero-scene__stadium-light--left"></div>
+                <div class="hero-scene__stadium-light hero-scene__stadium-light--right"></div>
 
-            <div class="hero-scene__field">
-                <div class="hero-scene__field-line hero-scene__field-line--one"></div>
-                <div class="hero-scene__field-line hero-scene__field-line--two"></div>
-                <div class="hero-scene__field-circle"></div>
+                <div class="hero-scene__field">
+                    <div class="hero-scene__field-line hero-scene__field-line--one"></div>
+                    <div class="hero-scene__field-line hero-scene__field-line--two"></div>
+                    <div class="hero-scene__field-circle"></div>
+                </div>
+
+                <div class="hero-scene__goal-wrap">
+                    <div class="hero-scene__goal-shadow"></div>
+                    <div class="hero-scene__goal"></div>
+                    <div class="hero-scene__net-wave"></div>
+                    <div class="hero-scene__goal-flash"></div>
+                </div>
+
+                <div class="hero-scene__ball-path">
+                    <div class="hero-scene__ball-trail hero-scene__ball-trail--one"></div>
+                    <div class="hero-scene__ball-trail hero-scene__ball-trail--two"></div>
+                    <div class="hero-scene__ball"></div>
+                </div>
+
+                <div class="hero-scene__mascot"></div>
+
+                <div class="hero-scene__particles">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+
+                <div class="hero-scene__goal-text">GOOOL</div>
             </div>
 
-            <div class="hero-scene__goal-wrap">
-                <div class="hero-scene__goal-shadow"></div>
-                <div class="hero-scene__goal"></div>
-                <div class="hero-scene__net-wave"></div>
-                <div class="hero-scene__goal-flash"></div>
+            <div class="container ch-hero-logo-wrap">
+                <img
+                    src="/assets/img/logo_quiniela.png"
+                    class="hero-central-logo"
+                    alt="Quiniela Villas Logo"
+                    width="290"
+                    height="290"
+                    loading="eager">
             </div>
 
-            <div class="hero-scene__ball-path">
-                <div class="hero-scene__ball-trail hero-scene__ball-trail--one"></div>
-                <div class="hero-scene__ball-trail hero-scene__ball-trail--two"></div>
-                <div class="hero-scene__ball"></div>
-            </div>
+            <div class="container ch-league-selector-wrap">
+                <div class="ch-league-scroll">
+                    <?php if (!empty($displayLeagues)): ?>
+                        <?php foreach ($displayLeagues as $league): ?>
+                            <?php
+                            $leagueSlug = (string)($league['slug'] ?? '');
+                            $leagueName = (string)($league['name'] ?? '');
+                            $isActive = $currentSlug === $leagueSlug;
+                            ?>
 
-            <div class="hero-scene__mascot"></div>
-
-            <div class="hero-scene__particles">
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-
-            <div class="hero-scene__goal-text">GOOOL</div>
-        </div>
-
-        <div class="container ch-hero-logo-wrap">
-            <img
-                src="/assets/img/logo_quiniela.png"
-                class="hero-central-logo"
-                alt="Quiniela Villas Logo"
-                width="290"
-                height="290"
-                loading="eager">
-        </div>
-
-        <div class="container ch-league-selector-wrap">
-            <div class="ch-league-scroll">
-                <?php if (!empty($displayLeagues)): ?>
-                    <?php foreach ($displayLeagues as $league): ?>
-                        <?php
-                        $leagueSlug = (string)($league['slug'] ?? '');
-                        $leagueName = (string)($league['name'] ?? '');
-                        $isActive = $currentSlug === $leagueSlug;
-                        ?>
-
-                        <a
-                            href="?league=<?= $e($leagueSlug) ?>"
-                            class="btn btn-sm btn-league-custom <?= $isActive ? 'active' : '' ?>">
-                            <?= $e(mb_strtoupper($leagueName)) ?>
+                            <a
+                                href="?league=<?= $e($leagueSlug) ?>"
+                                class="btn btn-sm btn-league-custom <?= $isActive ? 'active' : '' ?>">
+                                <?= $e(mb_strtoupper($leagueName)) ?>
+                            </a>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <a href="#" class="btn btn-sm btn-league active">
+                            <?= $e(mb_strtoupper($leagueLabel)) ?>
                         </a>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <a href="#" class="btn btn-sm btn-league active">
-                        <?= $e(mb_strtoupper($leagueLabel)) ?>
-                    </a>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div class="container ch-hero-copy-wrap">
+                <h1 class="text-uppercase">
+                    <span>
+                        <?= $e($leagueLabel) ?>
+                    </span>
+                </h1>
+
+                <?php if ($hasCurrentRound): ?>
+                    <h2>
+                        <?= $e($roundTitle) ?>
+                    </h2>
+                <?php endif; ?>
+
+                <?php if (!empty($availableRounds)): ?>
+                    <form method="get" action="" class="ch-round-form">
+                        <input type="hidden" name="league" value="<?= $e($currentSlug) ?>">
+
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                Cambiar jornada
+                            </span>
+
+                            <select
+                                name="round_id"
+                                class="form-select ch-round-select"
+                                onchange="this.form.submit()">
+                                <?php foreach ($availableRounds as $round): ?>
+                                    <?php
+                                    $roundId = (int)($round['id'] ?? 0);
+                                    $roundName = (string)($round['name'] ?? ('Jornada ' . $roundId));
+                                    ?>
+
+                                    <option
+                                        value="<?= $roundId ?>"
+                                        <?= ($hasCurrentRound && (int)$currentRound['id'] === $roundId) ? 'selected' : '' ?>>
+                                        <?= $e($roundName) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </form>
+                <?php endif; ?>
+
+                <?php if ($hasCurrentRound): ?>
+                    <div class="ch-date-wrap">
+                        <div class="date-info-container">
+                            <div class="small fw-bold">
+                                <span class="date-label date-label--start">Inicio:</span>
+                                <?= $e($displayOpenDate) ?>
+                            </div>
+
+                            <div class="small fw-bold">
+                                <span class="date-label date-label--end">Cierre:</span>
+                                <?= $e($displayCloseDate) ?>
+                            </div>
+                        </div>
+                    </div>
                 <?php endif; ?>
             </div>
-        </div>
-
-        <div class="container ch-hero-copy-wrap">
-            <h1 class="text-uppercase">
-                <span>
-                    <?= $e($leagueLabel) ?>
-                </span>
-            </h1>
 
             <?php if ($hasCurrentRound): ?>
-                <h2>
-                    <?= $e($roundTitle) ?>
-                </h2>
-            <?php endif; ?>
+                <?php if (isset($estimatedPrizes) && (($estimatedPrizes['first'] ?? 0) > 0 || ($estimatedPrizes['second'] ?? 0) > 0)): ?>
+                    <div class="container ch-prizes-wrap">
+                        <div class="prize-grid">
+                            <div class="prize-card prize-card--first">
+                                <span class="prize-card__label">🥇 1er lugar</span>
 
-            <?php if (!empty($availableRounds)): ?>
-                <form method="get" action="" class="ch-round-form">
-                    <input type="hidden" name="league" value="<?= $e($currentSlug) ?>">
+                                <strong>
+                                    $<?= number_format((float)($estimatedPrizes['first'] ?? 0), 2) ?>
+                                </strong>
+                            </div>
 
-                    <div class="input-group">
-                        <span class="input-group-text">
-                            Cambiar jornada
-                        </span>
+                            <div class="prize-card prize-card--second">
+                                <span class="prize-card__label">🥈 2do lugar</span>
 
-                        <select
-                            name="round_id"
-                            class="form-select ch-round-select"
-                            onchange="this.form.submit()">
-                            <?php foreach ($availableRounds as $round): ?>
-                                <?php
-                                $roundId = (int)($round['id'] ?? 0);
-                                $roundName = (string)($round['name'] ?? ('Jornada ' . $roundId));
-                                ?>
-
-                                <option
-                                    value="<?= $roundId ?>"
-                                    <?= ($hasCurrentRound && (int)$currentRound['id'] === $roundId) ? 'selected' : '' ?>>
-                                    <?= $e($roundName) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                                <strong>
+                                    $<?= number_format((float)($estimatedPrizes['second'] ?? 0), 2) ?>
+                                </strong>
+                            </div>
+                        </div>
                     </div>
-                </form>
-            <?php endif; ?>
+                <?php endif; ?>
 
-            <?php if ($hasCurrentRound): ?>
-                <div class="ch-date-wrap">
-                    <div class="date-info-container">
-                        <div class="small fw-bold">
-                            <span class="date-label date-label--start">Inicio:</span>
-                            <?= $e($displayOpenDate) ?>
+                <div class="ch-countdown-wrapper">
+                    <div
+                        class="countdown"
+                        id="countdown"
+                        data-deadline="<?= $e($deadlineIso) ?>">
+                        <div class="ch-counter-box">
+                            <span class="countdown-value" data-unit="days">00</span>
+                            <small>Días</small>
                         </div>
 
-                        <div class="small fw-bold">
-                            <span class="date-label date-label--end">Cierre:</span>
-                            <?= $e($displayCloseDate) ?>
+                        <div class="ch-counter-box">
+                            <span class="countdown-value" data-unit="hours">00</span>
+                            <small>Horas</small>
+                        </div>
+
+                        <div class="ch-counter-box">
+                            <span class="countdown-value" data-unit="minutes">00</span>
+                            <small>Min</small>
+                        </div>
+
+                        <div class="ch-counter-box pulse-urgent">
+                            <span class="countdown-value" data-unit="seconds">00</span>
+                            <small>Seg</small>
                         </div>
                     </div>
                 </div>
             <?php endif; ?>
         </div>
-
-        <?php if ($hasCurrentRound): ?>
-            <?php if (isset($estimatedPrizes) && (($estimatedPrizes['first'] ?? 0) > 0 || ($estimatedPrizes['second'] ?? 0) > 0)): ?>
-                <div class="container ch-prizes-wrap">
-                    <div class="prize-grid">
-                        <div class="prize-card prize-card--first">
-                            <span class="prize-card__label">🥇 1er lugar</span>
-
-                            <strong>
-                                $<?= number_format((float)($estimatedPrizes['first'] ?? 0), 2) ?>
-                            </strong>
-                        </div>
-
-                        <div class="prize-card prize-card--second">
-                            <span class="prize-card__label">🥈 2do lugar</span>
-
-                            <strong>
-                                $<?= number_format((float)($estimatedPrizes['second'] ?? 0), 2) ?>
-                            </strong>
-                        </div>
-                    </div>
-                </div>
-            <?php endif; ?>
-
-            <div class="ch-countdown-wrapper">
-                <div
-                    class="countdown"
-                    id="countdown"
-                    data-deadline="<?= $e($deadlineIso) ?>">
-                    <div class="ch-counter-box">
-                        <span class="countdown-value" data-unit="days">00</span>
-                        <small>Días</small>
-                    </div>
-
-                    <div class="ch-counter-box">
-                        <span class="countdown-value" data-unit="hours">00</span>
-                        <small>Horas</small>
-                    </div>
-
-                    <div class="ch-counter-box">
-                        <span class="countdown-value" data-unit="minutes">00</span>
-                        <small>Min</small>
-                    </div>
-
-                    <div class="ch-counter-box pulse-urgent">
-                        <span class="countdown-value" data-unit="seconds">00</span>
-                        <small>Seg</small>
-                    </div>
-                </div>
-            </div>
-        <?php endif; ?>
     </div>
-</div>
 
-    <!-----Corte--->
     <?php if ($hasMatches): ?>
         <div class="ch-table-container bg-white shadow-sm position-relative">
-            <img
-                src="/assets/img/manito_pasos.png"
-                class="step-hand-watermark step-hand-watermark--top-left d-none d-md-block"
-                alt="Pasos para jugar"
-                loading="lazy">
-
             <div class="table-responsive ch-table-scroll-wrap">
                 <table class="table table-bordered mb-0 ch-table">
                     <thead class="ch-thead text-white text-center text-uppercase">
@@ -716,7 +737,11 @@ $hasMatches = $hasCurrentRound && !empty($matches);
             emptyMsg.style.display = tbody.children.length === 0 ? 'block' : 'none';
         }
 
-        var observer = new MutationObserver(updateEmptyState);
+        if (typeof window.MutationObserver === 'undefined') {
+            return;
+        }
+
+        var observer = new window.MutationObserver(updateEmptyState);
 
         observer.observe(tbody, {
             childList: true

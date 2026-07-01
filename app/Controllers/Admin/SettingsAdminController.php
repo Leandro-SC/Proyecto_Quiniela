@@ -11,29 +11,10 @@ use PDO;
 use RuntimeException;
 use Throwable;
 
-/**
- * Administración de configuración general.
- *
- * Compatible con:
- * settings:
- * - setting_key
- * - setting_value
- *
- * country_currency:
- * - country_code
- * - country_name
- * - currency_code
- * - currency_symbol
- */
 class SettingsAdminController extends BaseAdminController
 {
     private PDO $pdo;
 
-    /**
-     * Inicializa conexión.
-     *
-     * @return void
-     */
     private function boot(): void
     {
         if (!isset($this->pdo)) {
@@ -41,13 +22,6 @@ class SettingsAdminController extends BaseAdminController
         }
     }
 
-    /**
-     * Muestra configuración general.
-     *
-     * @param Request $request
-     * @param Response $response
-     * @return void
-     */
     public function index(Request $request, Response $response): void
     {
         $this->requireAdmin();
@@ -61,17 +35,9 @@ class SettingsAdminController extends BaseAdminController
         ]);
     }
 
-    /**
-     * Actualiza configuración.
-     *
-     * @param Request $request
-     * @param Response $response
-     * @return void
-     */
     public function update(Request $request, Response $response): void
     {
         $this->requireAdmin();
-        $this->requireValidCsrf();
         $this->boot();
 
         try {
@@ -82,52 +48,47 @@ class SettingsAdminController extends BaseAdminController
             }
 
             $_SESSION['flash_success'] = 'Configuración actualizada correctamente.';
-
-            header('Location: /admin/settings');
-            exit;
         } catch (Throwable $e) {
-            error_log('Error actualizando configuración: ' . $e->getMessage());
-
+            error_log('Error actualizando settings: ' . $e->getMessage());
             $_SESSION['flash_error'] = $e->getMessage();
-
-            header('Location: /admin/settings');
-            exit;
         }
+
+        header('Location: /admin/settings');
+        exit;
     }
 
-    /**
-     * Obtiene settings.
-     *
-     * @return array<string,string>
-     */
     private function getSettings(): array
     {
-        $stmt = $this->pdo->query('
-            SELECT setting_key, setting_value
-            FROM settings
-            ORDER BY setting_key ASC
-        ');
+        $settings = $this->defaultSettings();
 
-        $rows = $stmt ? ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
+        try {
+            $stmt = $this->pdo->query('
+                SELECT `key`, `value`
+                FROM settings
+                ORDER BY `key` ASC
+            ');
 
-        $settings = [];
+            $rows = $stmt ? ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
 
-        foreach ($rows as $row) {
-            $settings[(string)$row['setting_key']] = (string)($row['setting_value'] ?? '');
+            foreach ($rows as $row) {
+                $key = (string)($row['key'] ?? '');
+                $value = (string)($row['value'] ?? '');
+
+                if ($key !== '') {
+                    $settings[$key] = $value;
+                }
+            }
+        } catch (Throwable $e) {
+            error_log('Error leyendo settings: ' . $e->getMessage());
         }
 
-        return array_merge($this->defaultSettings(), $settings);
+        return $settings;
     }
 
-    /**
-     * Valores por defecto.
-     *
-     * @return array<string,string>
-     */
     private function defaultSettings(): array
     {
         return [
-            'site_name' => 'Quinielas Villas',
+            'site_name' => 'Quinielas Villa',
             'site_description' => 'Sistema de quinielas deportivas',
             'whatsapp_phone' => '',
             'default_country' => 'MX',
@@ -142,18 +103,15 @@ class SettingsAdminController extends BaseAdminController
             'support_email' => '',
             'support_phone' => '',
             'maintenance_mode' => '0',
+            'public_hero_bg_desktop' => '',
+            'public_hero_bg_mobile' => '',
+            'public_hero_overlay_opacity' => '0.72',
         ];
     }
 
-    /**
-     * Sanitiza configuración.
-     *
-     * @param array<string,mixed> $input
-     * @return array<string,string>
-     */
     private function sanitizeSettingsData(array $input): array
     {
-        $siteName = trim((string)($input['site_name'] ?? 'Quinielas Villas'));
+        $siteName = trim((string)($input['site_name'] ?? 'Quinielas Villa'));
         $siteDescription = trim((string)($input['site_description'] ?? ''));
         $whatsappPhone = preg_replace('/\D+/', '', (string)($input['whatsapp_phone'] ?? '')) ?? '';
 
@@ -174,15 +132,32 @@ class SettingsAdminController extends BaseAdminController
 
         $maintenanceMode = isset($input['maintenance_mode']) ? '1' : '0';
 
+        $currentHeroDesktop = trim((string)($input['current_public_hero_bg_desktop'] ?? ''));
+        $currentHeroMobile = trim((string)($input['current_public_hero_bg_mobile'] ?? ''));
+
+        $publicHeroBgDesktop = $this->uploadSettingImage(
+            'public_hero_bg_desktop_file',
+            $currentHeroDesktop,
+            'hero-desktop'
+        );
+
+        $publicHeroBgMobile = $this->uploadSettingImage(
+            'public_hero_bg_mobile_file',
+            $currentHeroMobile,
+            'hero-mobile'
+        );
+
+        $publicHeroOverlayOpacity = (float)($input['public_hero_overlay_opacity'] ?? 0.72);
+
         if ($siteName === '') {
             throw new RuntimeException('El nombre del sitio es obligatorio.');
         }
 
-        if (!preg_match('/^[A-Z]{2}$/', $defaultCountry)) {
+        if ($defaultCountry === '') {
             $defaultCountry = 'MX';
         }
 
-        if (!preg_match('/^[A-Z]{3}$/', $defaultCurrency)) {
+        if ($defaultCurrency === '') {
             $defaultCurrency = 'MXN';
         }
 
@@ -203,6 +178,10 @@ class SettingsAdminController extends BaseAdminController
             $second = 15.00;
         }
 
+        if ($publicHeroOverlayOpacity < 0.35 || $publicHeroOverlayOpacity > 0.95) {
+            $publicHeroOverlayOpacity = 0.72;
+        }
+
         return [
             'site_name' => $siteName,
             'site_description' => $siteDescription,
@@ -219,83 +198,144 @@ class SettingsAdminController extends BaseAdminController
             'support_email' => $supportEmail,
             'support_phone' => $supportPhone,
             'maintenance_mode' => $maintenanceMode,
+            'public_hero_bg_desktop' => $publicHeroBgDesktop,
+            'public_hero_bg_mobile' => $publicHeroBgMobile,
+            'public_hero_overlay_opacity' => number_format($publicHeroOverlayOpacity, 2, '.', ''),
         ];
     }
 
-    /**
-     * Inserta o actualiza setting.
-     *
-     * @param string $key
-     * @param string $value
-     * @return void
-     */
+    private function uploadSettingImage(string $fieldName, string $currentValue, string $prefix): string
+    {
+        if (
+            !isset($_FILES[$fieldName]) ||
+            !is_array($_FILES[$fieldName]) ||
+            ($_FILES[$fieldName]['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE
+        ) {
+            return $currentValue;
+        }
+
+        $file = $_FILES[$fieldName];
+
+        if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
+            throw new RuntimeException('No se pudo subir la imagen seleccionada.');
+        }
+
+        $tmpName = (string)($file['tmp_name'] ?? '');
+
+        if ($tmpName === '' || !is_uploaded_file($tmpName)) {
+            throw new RuntimeException('El archivo subido no es válido.');
+        }
+
+        if ((int)($file['size'] ?? 0) > 5 * 1024 * 1024) {
+            throw new RuntimeException('La imagen no debe pesar más de 5MB.');
+        }
+
+        $mime = '';
+
+        if (function_exists('finfo_open')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+
+            if ($finfo) {
+                $mime = (string)finfo_file($finfo, $tmpName);
+                finfo_close($finfo);
+            }
+        }
+
+        $allowed = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            'image/avif' => 'avif',
+        ];
+
+        if (!isset($allowed[$mime])) {
+            throw new RuntimeException('Formato no permitido. Usa JPG, PNG, WEBP o AVIF.');
+        }
+
+        $extension = $allowed[$mime];
+
+        $projectRoot = dirname(__DIR__, 3);
+        $uploadDir = $projectRoot . '/assets/img/backgrounds';
+
+        if (!is_dir($uploadDir)) {
+            if (!mkdir($uploadDir, 0775, true) && !is_dir($uploadDir)) {
+                throw new RuntimeException('No se pudo crear la carpeta de fondos.');
+            }
+        }
+
+        if (!is_writable($uploadDir)) {
+            throw new RuntimeException('La carpeta assets/img/backgrounds no tiene permisos de escritura.');
+        }
+
+        $safePrefix = preg_replace('/[^a-z0-9\-_]+/i', '-', $prefix) ?: 'hero';
+        $filename = $safePrefix . '-' . date('Ymd-His') . '-' . bin2hex(random_bytes(4)) . '.' . $extension;
+        $targetPath = $uploadDir . '/' . $filename;
+
+        if (!move_uploaded_file($tmpName, $targetPath)) {
+            throw new RuntimeException('No se pudo guardar la imagen subida.');
+        }
+
+        return '/assets/img/backgrounds/' . $filename;
+    }
+
     private function upsertSetting(string $key, string $value): void
     {
         $stmt = $this->pdo->prepare('
             INSERT INTO settings (
-                setting_key,
-                group_name,
-                setting_value,
-                setting_type,
-                is_public,
+                `key`,
+                `value`,
                 created_at,
                 updated_at
             )
             VALUES (
                 :setting_key,
-                :group_name,
                 :setting_value,
-                :setting_type,
-                :is_public,
                 NOW(),
                 NOW()
             )
             ON DUPLICATE KEY UPDATE
-                setting_value = VALUES(setting_value),
+                `value` = VALUES(`value`),
                 updated_at = NOW()
         ');
 
         $stmt->execute([
             ':setting_key' => $key,
-            ':group_name' => 'general',
             ':setting_value' => $value,
-            ':setting_type' => 'TEXT',
-            ':is_public' => 1,
         ]);
     }
 
-    /**
-     * Obtiene países activos.
-     *
-     * @return array<int,array<string,mixed>>
-     */
     private function getCountries(): array
     {
-        $stmt = $this->pdo->query('
-            SELECT id, name, iso_code
-            FROM countries
-            WHERE is_active = 1
-            ORDER BY name ASC
-        ');
+        try {
+            $stmt = $this->pdo->query('
+                SELECT id, name, iso_code
+                FROM countries
+                WHERE is_active = 1
+                ORDER BY name ASC
+            ');
 
-        return $stmt ? ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
+            return $stmt ? ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
+        } catch (Throwable $e) {
+            error_log('Error leyendo países en settings: ' . $e->getMessage());
+            return [];
+        }
     }
 
-    /**
-     * Obtiene monedas disponibles.
-     *
-     * @return array<int,array<string,mixed>>
-     */
     private function getCurrencies(): array
     {
-        $stmt = $this->pdo->query('
-            SELECT DISTINCT
-                currency_code,
-                currency_symbol
-            FROM country_currency
-            ORDER BY currency_code ASC
-        ');
+        try {
+            $stmt = $this->pdo->query('
+                SELECT DISTINCT
+                    currency_code,
+                    currency_symbol
+                FROM country_currency
+                ORDER BY currency_code ASC
+            ');
 
-        return $stmt ? ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
+            return $stmt ? ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
+        } catch (Throwable $e) {
+            error_log('Error leyendo monedas en settings: ' . $e->getMessage());
+            return [];
+        }
     }
 }

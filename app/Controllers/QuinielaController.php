@@ -1,14 +1,16 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Database;
 use App\Core\Request;
 use App\Core\Response;
-use App\Models\RoundModel;
-use App\Models\MatchModel;
 use App\Models\LeagueModel;
+use App\Models\MatchModel;
 use App\Models\PromotionModel;
+use App\Models\RoundModel;
 use App\Models\TicketModel;
 use App\Services\RankingService;
 use Throwable;
@@ -111,6 +113,7 @@ class QuinielaController extends BaseController
             $whatsappPhone = $this->config['whatsapp']['phone'] ?? '';
 
             $deadlineIso = '';
+
             if ($currentRound && !empty($currentRound['close_at'])) {
                 $deadlineIso = date('c', strtotime((string)$currentRound['close_at']));
             }
@@ -121,17 +124,28 @@ class QuinielaController extends BaseController
             ];
 
             if ($currentRound && class_exists(RankingService::class)) {
-                $summary = $this->getRankingSummaryCached((int)$currentRound['id']);
+                try {
+                    $summary = $this->getRankingSummaryCached((int)$currentRound['id']);
 
-                $estimatedPrizes['first'] = (float)($summary['first_prize_total'] ?? 0.0);
-                $estimatedPrizes['second'] = (float)($summary['second_prize_total'] ?? 0.0);
+                    $estimatedPrizes['first'] = (float)($summary['first_prize_total'] ?? 0.0);
+                    $estimatedPrizes['second'] = (float)($summary['second_prize_total'] ?? 0.0);
+                } catch (Throwable $e) {
+                    error_log('Error calculando premios en home: ' . $e->getMessage());
+
+                    $estimatedPrizes['first'] = 0.0;
+                    $estimatedPrizes['second'] = 0.0;
+                }
             }
-
             $activePromo = null;
 
             if (class_exists(PromotionModel::class)) {
-                $promotionModel = new PromotionModel();
-                $activePromo = $promotionModel->getActivePromo(null);
+                try {
+                    $promotionModel = new PromotionModel();
+                    $activePromo = $promotionModel->getActivePromo(null);
+                } catch (Throwable $e) {
+                    error_log('Error leyendo promoción activa en home: ' . $e->getMessage());
+                    $activePromo = null;
+                }
             }
 
             $metaDescription = 'Participa en la Quiniela ' .
@@ -139,6 +153,8 @@ class QuinielaController extends BaseController
                 ' ' .
                 ($currentRound['name'] ?? 'Actual') .
                 '. Predice resultados y gana premios.';
+
+            $publicSettings = $this->getPublicSettings();
 
             $this->render('home/index', [
                 'pageTitle' => ($selectedLeagueData['name'] ?? 'Quiniela') . ' - ' . ($currentRound['name'] ?? ''),
@@ -157,6 +173,7 @@ class QuinielaController extends BaseController
                 'deadlineIso' => $deadlineIso,
                 'estimatedPrizes' => $estimatedPrizes,
                 'activePromo' => $activePromo,
+                'publicSettings' => $publicSettings,
             ]);
         } catch (Throwable $e) {
             error_log('Error en QuinielaController@index: ' . $e->getMessage());
@@ -244,7 +261,11 @@ class QuinielaController extends BaseController
             $roundSummary['second_places'] = count($summary['second_winners'] ?? []);
             $roundSummary['total_collected'] = (float)($summary['total_collected'] ?? 0.0);
 
-            $tickets = $rankingService->getRoundRanking($selectedRoundId, 'PAID', $search !== '' ? $search : null);
+            $tickets = $rankingService->getRoundRanking(
+                $selectedRoundId,
+                'PAID',
+                $search !== '' ? $search : null
+            );
 
             $matches = $matchModel->getByRound($selectedRoundId);
 
@@ -484,4 +505,49 @@ class QuinielaController extends BaseController
 
         return $data;
     }
+
+   /**
+ * Obtiene configuración pública visual.
+ *
+ * @return array<string,string>
+ */
+private function getPublicSettings(): array
+{
+    $defaults = [
+        'public_hero_bg_desktop' => '',
+        'public_hero_bg_mobile' => '',
+        'public_hero_overlay_opacity' => '0.72',
+    ];
+
+    try {
+        $pdo = Database::getConnection();
+
+        $stmt = $pdo->query("
+            SELECT `key`, `value`
+            FROM settings
+            WHERE `key` IN (
+                'public_hero_bg_desktop',
+                'public_hero_bg_mobile',
+                'public_hero_overlay_opacity'
+            )
+        ");
+
+        $rows = $stmt ? ($stmt->fetchAll(\PDO::FETCH_ASSOC) ?: []) : [];
+
+        foreach ($rows as $row) {
+            $key = (string)($row['key'] ?? '');
+            $value = (string)($row['value'] ?? '');
+
+            if ($key !== '' && array_key_exists($key, $defaults)) {
+                $defaults[$key] = $value;
+            }
+        }
+    } catch (Throwable $e) {
+        error_log('Error leyendo settings públicos: ' . $e->getMessage());
+    }
+
+    return $defaults;
+}
+
+
 }

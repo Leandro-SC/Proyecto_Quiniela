@@ -363,17 +363,258 @@
         });
     }
 
-    function boot() {
-        if (!document.body.classList.contains('qv-public-body')) {
+    function initDynamicCoach() {
+    var root = document.getElementById('quiniela-root');
+
+    if (!root) {
+        return;
+    }
+
+    var tableBody = document.getElementById('matches-table-body');
+    var nameInput = document.getElementById('player-name');
+    var phoneInput = document.getElementById('player-phone');
+    var addButton = document.getElementById('btn-add-ticket');
+    var whatsappButton = document.getElementById('btn-send-whatsapp');
+    var summaryBody = document.getElementById('tickets-summary-body');
+
+    if (!tableBody) {
+        return;
+    }
+
+    var overlay = document.createElement('div');
+    overlay.id = 'qv-coach-overlay';
+    overlay.innerHTML = ''
+        + '<div class="qv-coach-hand" aria-hidden="true">👆</div>'
+        + '<div class="qv-coach-tip"></div>';
+
+    document.body.appendChild(overlay);
+
+    var tip = overlay.querySelector('.qv-coach-tip');
+    var currentTarget = null;
+    var rafId = null;
+
+    function isVisible(el) {
+        if (!el) {
+            return false;
+        }
+
+        var rect = el.getBoundingClientRect();
+
+        return rect.width > 0 &&
+            rect.height > 0 &&
+            window.getComputedStyle(el).visibility !== 'hidden' &&
+            window.getComputedStyle(el).display !== 'none';
+    }
+
+    function hasTicketsAdded() {
+        if (!summaryBody) {
+            return false;
+        }
+
+        return summaryBody.querySelectorAll('tr').length > 0;
+    }
+
+    function getFirstPendingPickButton() {
+        var rows = tableBody.querySelectorAll('tr[data-match-id]');
+
+        for (var i = 0; i < rows.length; i++) {
+            var row = rows[i];
+
+            if (row.querySelector('button.btn-choice.active, button.btn-choice.selected, button.btn-choice.btn-warning')) {
+                continue;
+            }
+
+            var centerButton = row.querySelector('button.btn-choice[data-choice="E"]:not(:disabled)');
+            var firstButton = row.querySelector('button.btn-choice:not(:disabled)');
+
+            return centerButton || firstButton || row;
+        }
+
+        return null;
+    }
+
+    function resolveNextTarget() {
+        var pendingPick = getFirstPendingPickButton();
+
+        if (pendingPick) {
+            return {
+                element: pendingPick,
+                message: 'Selecciona este partido'
+            };
+        }
+
+        if (nameInput && nameInput.value.trim() === '') {
+            return {
+                element: nameInput,
+                message: 'Ingresa tu nombre'
+            };
+        }
+
+        if (phoneInput && phoneInput.value.trim() === '') {
+            return {
+                element: phoneInput,
+                message: 'Ingresa tu celular'
+            };
+        }
+
+        if (addButton && !hasTicketsAdded()) {
+            return {
+                element: addButton,
+                message: 'Agrega tu quiniela'
+            };
+        }
+
+        if (whatsappButton && hasTicketsAdded() && !whatsappButton.disabled) {
+            return {
+                element: whatsappButton,
+                message: 'Envíala por WhatsApp'
+            };
+        }
+
+        return null;
+    }
+
+    function positionCoach(target, message) {
+        if (!target || !isVisible(target)) {
+            hideCoach();
             return;
         }
 
-        log('Archivo public-modern.js cargado.');
+        var rect = target.getBoundingClientRect();
+        var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
 
-        initHeroEntrance();
-        initHeroAnimations();
-        initPickButtons();
+        var x = rect.left + scrollLeft + (rect.width / 2);
+        var y = rect.top + scrollTop + (rect.height / 2);
+
+        overlay.style.transform = 'translate3d(' + x + 'px, ' + y + 'px, 0)';
+
+        if (tip) {
+            tip.textContent = message;
+        }
+
+        overlay.classList.add('is-active');
+        currentTarget = target;
     }
+
+    function hideCoach() {
+        overlay.classList.remove('is-active');
+        currentTarget = null;
+    }
+
+    function updateCoach() {
+        if (rafId) {
+            window.cancelAnimationFrame(rafId);
+        }
+
+        rafId = window.requestAnimationFrame(function () {
+            var next = resolveNextTarget();
+
+            if (!next) {
+                hideCoach();
+                return;
+            }
+
+            positionCoach(next.element, next.message);
+        });
+    }
+
+    function softScrollToTarget() {
+        var next = resolveNextTarget();
+
+        if (!next || !next.element) {
+            return;
+        }
+
+        var rect = next.element.getBoundingClientRect();
+        var viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+
+        if (rect.top < 90 || rect.bottom > viewportHeight - 90) {
+            next.element.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+                inline: 'nearest'
+            });
+        }
+    }
+
+    document.addEventListener('click', function () {
+        window.setTimeout(updateCoach, 120);
+    });
+
+    document.addEventListener('change', function () {
+        window.setTimeout(updateCoach, 120);
+    });
+
+    if (nameInput) {
+        nameInput.addEventListener('input', updateCoach);
+        nameInput.addEventListener('focus', updateCoach);
+    }
+
+    if (phoneInput) {
+        phoneInput.addEventListener('input', updateCoach);
+        phoneInput.addEventListener('focus', updateCoach);
+    }
+
+    if (addButton) {
+        addButton.addEventListener('click', function () {
+            window.setTimeout(function () {
+                updateCoach();
+                softScrollToTarget();
+            }, 180);
+        });
+    }
+
+    if (whatsappButton) {
+        whatsappButton.addEventListener('click', function () {
+            overlay.classList.remove('is-active');
+            overlay.classList.add('is-done');
+        });
+    }
+
+    window.addEventListener('scroll', updateCoach, { passive: true });
+    window.addEventListener('resize', updateCoach);
+
+    if (summaryBody && typeof MutationObserver !== 'undefined') {
+        var summaryObserver = new MutationObserver(updateCoach);
+
+        summaryObserver.observe(summaryBody, {
+            childList: true,
+            subtree: true
+        });
+    }
+
+    if (typeof MutationObserver !== 'undefined') {
+        var tableObserver = new MutationObserver(function () {
+            window.setTimeout(updateCoach, 80);
+        });
+
+        tableObserver.observe(tableBody, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['class', 'disabled']
+        });
+    }
+
+    window.setTimeout(function () {
+        updateCoach();
+        softScrollToTarget();
+    }, 450);
+}
+
+function boot() {
+    if (!document.body.classList.contains('qv-public-body') && document.body.classList.contains('qv-admin-body')) {
+        return;
+    }
+
+    log('Archivo public-modern.js cargado.');
+
+    initHeroEntrance();
+    initHeroAnimations();
+    initPickButtons();
+    initDynamicCoach();
+}
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', boot);
