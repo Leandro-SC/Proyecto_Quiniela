@@ -1,4 +1,4 @@
-.env
+.env/
 *.sql
 /storage/logs/*.log
 /storage/cache/*
